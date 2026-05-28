@@ -40,7 +40,23 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+The plan MUST document evidence for each constitution gate:
+
+- **CRM capability boundary**: Name the single business capability delivered by
+  this feature and the affected CRM aggregates (Lead, Activity, Follow-up, Deal,
+  Revenue, Target, Exhibition, Analytics, Notification).
+- **Secure access control**: Define RBAC roles, permissions, ownership/team
+  scoping, denial behavior, validation rules, and sensitive data handled.
+- **Test-first coverage**: List required contract, integration, unit, and
+  security-path tests before implementation tasks are generated.
+- **Auditable events**: Identify domain events, immutable activity/audit log
+  entries, queue jobs, retries, idempotency, and correlation identifiers.
+- **Operational readiness**: Define logging, metrics, error handling, migration,
+  index, transaction, performance, and deployment considerations.
+
+Any gate that does not apply MUST be explicitly marked `N/A` with a rationale.
+Unresolved violations MUST be recorded in Complexity Tracking before design work
+continues.
 
 ## Project Structure
 

@@ -78,6 +78,21 @@
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
 
+## CRM & Security Considerations *(mandatory)*
+
+<!--
+  ACTION REQUIRED: Every CRM capability must state how it protects customer,
+  sales, revenue, commission, note, credential, and audit data touched by the
+  feature. Use N/A only with a clear rationale.
+-->
+
+- **Business Capability**: [One independently valuable CRM or sales operations capability]
+- **Affected CRM Data**: [Lead, Activity, Follow-up, Deal, Revenue, Target, Exhibition, Analytics, Notification, or N/A]
+- **Roles & Permissions**: [Admin/Manager/Sales Representative access rules, denial behavior, ownership or team scoping]
+- **Audit & Activity Trail**: [Audit log entries, immutable activity timeline entries, redaction needs]
+- **Domain Events**: [Events emitted/consumed, queue jobs, idempotency, retry behavior, or N/A]
+- **Security Controls**: [Validation, sensitive data handling, secrets, webhook verification, token/session concerns]
+
 ## Requirements *(mandatory)*
 
 <!--
