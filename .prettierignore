@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+coverage/
+.next/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+playwright-report/
+test-results/
+.agents/
+.specify/
+SpacKit/
+specs/
+Plan.md
+opencode.json
+infra/docker/*.Dockerfile
