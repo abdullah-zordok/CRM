@@ -4,10 +4,12 @@ const commands = [
   ["pnpm", ["format:check"]],
   ["pnpm", ["lint"]],
   ["pnpm", ["build"]],
+  ["pnpm", ["db:migrate"]],
+  ["pnpm", ["db:seed"]],
   ["pnpm", ["test:unit"]],
   ["pnpm", ["test:contract"]],
   ["pnpm", ["test:integration"]],
-  ["pnpm", ["test:e2e"]],
+  ["pnpm", ["verify:users-rbac"]],
 ] as const;
 
 for (const [command, args] of commands) {

@@ -1,0 +1,761 @@
+openapi: 3.1.0
+info:
+  title: Leads Core API
+  version: 0.1.0
+  description: >
+    Phase 2 contract for lead creation, search, detail, assignment, status
+    workflow, lightweight exhibition references, append-only notes, lead
+    history, duplicate blocking, and stale update conflict handling.
+servers:
+  - url: http://localhost:3001
+    description: Local API
+security:
+  - sessionCookie: []
+paths:
+  /leads:
+    get:
+      summary: Search visible leads
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/LeadStatus"
+        - $ref: "#/components/parameters/LeadSource"
+        - $ref: "#/components/parameters/Priority"
+        - $ref: "#/components/parameters/OwnerUserId"
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/ExhibitionText"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Lead search results scoped to the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create a lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeadRequest"
+      responses:
+        "201":
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/DuplicateLeadConflict"
+  /leads/{leadId}:
+    get:
+      summary: Get lead detail
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      responses:
+        "200":
+          description: Lead detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update lead contact, source, priority, budget, or exhibition reference
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLeadRequest"
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/StaleUpdate"
+  /leads/{leadId}/assignment:
+    put:
+      summary: Assign or reassign a lead
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignLeadRequest"
+      responses:
+        "200":
+          description: Lead assignment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/StaleUpdate"
+  /leads/{leadId}/status:
+    put:
+      summary: Change lead status
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeLeadStatusRequest"
+      responses:
+        "200":
+          description: Lead status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/StaleUpdate"
+  /leads/{leadId}/notes:
+    post:
+      summary: Add an append-only lead note
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddLeadNoteRequest"
+      responses:
+        "201":
+          description: Lead note added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadNote"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/StaleUpdate"
+  /leads/{leadId}/history:
+    get:
+      summary: Get lead history
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Lead history entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadHistoryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /leads/sources:
+    get:
+      summary: List selectable lead sources
+      responses:
+        "200":
+          description: Lead sources
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadSourceListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: crm_session
+  parameters:
+    LeadId:
+      name: leadId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Search:
+      name: search
+      in: query
+      schema:
+        type: string
+        maxLength: 120
+    LeadStatus:
+      name: status
+      in: query
+      schema:
+        $ref: "#/components/schemas/LeadStatus"
+    LeadSource:
+      name: sourceCode
+      in: query
+      schema:
+        type: string
+    Priority:
+      name: priority
+      in: query
+      schema:
+        $ref: "#/components/schemas/LeadPriority"
+    OwnerUserId:
+      name: ownerUserId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    TeamId:
+      name: teamId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    ExhibitionText:
+      name: exhibition
+      in: query
+      schema:
+        type: string
+        maxLength: 120
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Authentication required or session invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Authenticated user lacks required permission
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found or not visible to the authenticated user
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Request conflicts with lead state, assignment, or status rules
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    DuplicateLeadConflict:
+      description: Active lead with matching email or phone already exists
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DuplicateLeadError"
+    StaleUpdate:
+      description: Lead was changed by another user; reload before retrying
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    LeadStatus:
+      type: string
+      enum: [NEW, CONTACTED, QUALIFIED, NEGOTIATION, WON, LOST, ARCHIVED]
+    LeadPriority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, URGENT]
+    LeadSource:
+      type: object
+      required: [code, name, status]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+    ExhibitionReference:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        date:
+          type: string
+          format: date
+          nullable: true
+        location:
+          type: string
+          maxLength: 160
+          nullable: true
+    LeadSummary:
+      type: object
+      required:
+        - id
+        - displayName
+        - sourceCode
+        - status
+        - priority
+        - ownerUserId
+        - createdByUserId
+        - version
+        - createdAt
+        - updatedAt
+        - correlationId
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        company:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        sourceCode:
+          type: string
+        status:
+          $ref: "#/components/schemas/LeadStatus"
+        priority:
+          $ref: "#/components/schemas/LeadPriority"
+        budgetAmount:
+          type: number
+          nullable: true
+        budgetCurrency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          nullable: true
+        ownerUserId:
+          type: string
+          format: uuid
+        ownerDisplayName:
+          type: string
+          nullable: true
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+        createdByUserId:
+          type: string
+          format: uuid
+        exhibitionReference:
+          $ref: "#/components/schemas/ExhibitionReference"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+    LeadDetail:
+      allOf:
+        - $ref: "#/components/schemas/LeadSummary"
+        - type: object
+          required: [notes, assignmentHistory, statusHistory, permissions]
+          properties:
+            notes:
+              type: array
+              items:
+                $ref: "#/components/schemas/LeadNote"
+            assignmentHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/LeadAssignmentHistory"
+            statusHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/LeadStatusHistory"
+            permissions:
+              type: object
+              required: [canUpdate, canAssign, canChangeStatus, canAddNote, canViewHistory]
+              additionalProperties: false
+              properties:
+                canUpdate:
+                  type: boolean
+                canAssign:
+                  type: boolean
+                canChangeStatus:
+                  type: boolean
+                canAddNote:
+                  type: boolean
+                canViewHistory:
+                  type: boolean
+    LeadListResponse:
+      type: object
+      required: [items, page, pageSize, total, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeadSummary"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        correlationId:
+          type: string
+    CreateLeadRequest:
+      type: object
+      required: [sourceCode, priority, ownerUserId]
+      additionalProperties: false
+      properties:
+        displayName:
+          type: string
+          maxLength: 160
+        company:
+          type: string
+          maxLength: 160
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        phone:
+          type: string
+          maxLength: 40
+        sourceCode:
+          type: string
+        priority:
+          $ref: "#/components/schemas/LeadPriority"
+        ownerUserId:
+          type: string
+          format: uuid
+        budgetAmount:
+          type: number
+          minimum: 0
+        budgetCurrency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        exhibitionReference:
+          $ref: "#/components/schemas/ExhibitionReference"
+        initialNote:
+          type: string
+          maxLength: 4000
+    UpdateLeadRequest:
+      type: object
+      required: [version]
+      additionalProperties: false
+      properties:
+        displayName:
+          type: string
+          maxLength: 160
+        company:
+          type: string
+          maxLength: 160
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        phone:
+          type: string
+          maxLength: 40
+        sourceCode:
+          type: string
+        priority:
+          $ref: "#/components/schemas/LeadPriority"
+        budgetAmount:
+          type: number
+          minimum: 0
+          nullable: true
+        budgetCurrency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          nullable: true
+        exhibitionReference:
+          $ref: "#/components/schemas/ExhibitionReference"
+        version:
+          type: integer
+          minimum: 1
+    AssignLeadRequest:
+      type: object
+      required: [ownerUserId, version]
+      additionalProperties: false
+      properties:
+        ownerUserId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          maxLength: 500
+        version:
+          type: integer
+          minimum: 1
+    ChangeLeadStatusRequest:
+      type: object
+      required: [status, version]
+      additionalProperties: false
+      properties:
+        status:
+          $ref: "#/components/schemas/LeadStatus"
+        reason:
+          type: string
+          maxLength: 500
+        version:
+          type: integer
+          minimum: 1
+    AddLeadNoteRequest:
+      type: object
+      required: [body, version]
+      additionalProperties: false
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        version:
+          type: integer
+          minimum: 1
+    LeadNote:
+      type: object
+      required: [id, leadId, authorUserId, body, createdAt, correlationId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        leadId:
+          type: string
+          format: uuid
+        authorUserId:
+          type: string
+          format: uuid
+        authorDisplayName:
+          type: string
+          nullable: true
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+    LeadAssignmentHistory:
+      type: object
+      required: [id, leadId, toUserId, assignedByUserId, createdAt, correlationId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        leadId:
+          type: string
+          format: uuid
+        fromUserId:
+          type: string
+          format: uuid
+          nullable: true
+        toUserId:
+          type: string
+          format: uuid
+        assignedByUserId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+    LeadStatusHistory:
+      type: object
+      required: [id, leadId, toStatus, changedByUserId, changeType, createdAt, correlationId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        leadId:
+          type: string
+          format: uuid
+        fromStatus:
+          $ref: "#/components/schemas/LeadStatus"
+        toStatus:
+          $ref: "#/components/schemas/LeadStatus"
+        changedByUserId:
+          type: string
+          format: uuid
+        changeType:
+          type: string
+          enum: [NORMAL_FLOW, CORRECTION, ARCHIVE, RESTORE]
+        reason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+    LeadHistoryEntry:
+      type: object
+      required: [id, leadId, entryType, summary, createdAt, correlationId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        leadId:
+          type: string
+          format: uuid
+        entryType:
+          type: string
+        actorUserId:
+          type: string
+          format: uuid
+          nullable: true
+        summary:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+    LeadHistoryResponse:
+      type: object
+      required: [items, page, pageSize, total, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeadHistoryEntry"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        correlationId:
+          type: string
+    LeadSourceListResponse:
+      type: object
+      required: [items, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeadSource"
+        correlationId:
+          type: string
+    DuplicateLeadError:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            visibleLeadId:
+              type: string
+              format: uuid
+              nullable: true
+            restrictedMatch:
+              type: boolean
+    ErrorResponse:
+      type: object
+      required: [code, message, correlationId]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        correlationId:
+          type: string

@@ -1,41 +1,45 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { FormEvent } from "react";
-import { login } from "@/features/foundation/auth/auth-client";
+import { login } from "./auth-client";
 
 export function LoginForm() {
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string>();
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
+  async function submit(formData: FormData) {
+    setError(undefined);
     try {
-      await login(email, password);
-      window.location.href = "/foundation";
+      await login({
+        email: String(formData.get("email")),
+        password: String(formData.get("password")),
+      });
+      router.push("/users");
+      router.refresh();
     } catch {
-      setError("Invalid credentials");
+      setError("Invalid email or password.");
     }
   }
 
   return (
-    <form onSubmit={onSubmit} style={{ display: "grid", gap: 12, maxWidth: 360 }}>
+    <form action={submit}>
       <label>
         Email
-        <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" />
+        <input name="email" type="email" autoComplete="email" required />
       </label>
       <label>
         Password
         <input
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          name="password"
           type="password"
+          autoComplete="current-password"
+          minLength={12}
+          required
         />
       </label>
-      {error ? <p role="alert">{error}</p> : null}
       <button type="submit">Sign in</button>
+      {error ? <p role="alert">{error}</p> : null}
     </form>
   );
 }

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { AuthSessionStatus, FoundationUserStatus, RoleCategoryCode } from "@prisma/client";
+import { AuthSessionRevocationReason, AuthSessionStatus, PlatformUserStatus } from "@prisma/client";
 import { PrismaService } from "../../infrastructure/database/prisma.service.js";
 
 @Injectable()
@@ -7,9 +7,13 @@ export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findUserByEmail(email: string) {
-    return this.prisma.foundationUser.findUnique({
+    return this.prisma.platformUser.findUnique({
       where: { email: email.toLowerCase() },
-      include: { roles: { include: { role: true } } },
+      include: {
+        roleAssignments: true,
+        reviewerAssignments: true,
+        teamMemberships: { include: { team: true } },
+      },
     });
   }
 
@@ -22,33 +26,29 @@ export class AuthRepository {
   findActiveSession(sessionHash: string) {
     return this.prisma.authSession.findUnique({
       where: { sessionHash },
-      include: { user: { include: { roles: { include: { role: true } } } } },
+      include: {
+        user: {
+          include: {
+            roleAssignments: true,
+            reviewerAssignments: true,
+            teamMemberships: { include: { team: true } },
+          },
+        },
+      },
     });
   }
 
-  revokeSession(sessionHash: string) {
+  revokeSession(
+    sessionHash: string,
+    reason: AuthSessionRevocationReason = AuthSessionRevocationReason.LOGOUT,
+  ) {
     return this.prisma.authSession.updateMany({
       where: { sessionHash, status: AuthSessionStatus.ACTIVE },
-      data: { status: AuthSessionStatus.REVOKED, revokedAt: new Date() },
+      data: { status: AuthSessionStatus.REVOKED, revokedAt: new Date(), revocationReason: reason },
     });
   }
 
-  async ensureRoleCategories() {
-    const roles = [
-      RoleCategoryCode.ADMIN,
-      RoleCategoryCode.MANAGER,
-      RoleCategoryCode.SALES_REPRESENTATIVE,
-    ];
-    for (const code of roles) {
-      await this.prisma.roleCategory.upsert({
-        where: { code },
-        update: {},
-        create: { code, name: code.replace("_", " "), description: `${code} baseline role` },
-      });
-    }
-  }
-
-  isActive(status: FoundationUserStatus) {
-    return status === FoundationUserStatus.ACTIVE;
+  isActive(status: PlatformUserStatus): boolean {
+    return status === PlatformUserStatus.ACTIVE;
   }
 }

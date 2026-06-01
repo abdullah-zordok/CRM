@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from "@nestjs/common";
+import { Controller, Get, HttpCode, Res } from "@nestjs/common";
 import type { FastifyReply } from "fastify";
 import { HealthService } from "./health.service.js";
 
@@ -12,11 +12,12 @@ export class HealthController {
   }
 
   @Get("ready")
+  @HttpCode(200)
   async ready(@Res({ passthrough: true }) reply: FastifyReply) {
-    const readiness = await this.health.ready();
-    if (readiness.status !== "UP") {
+    const result = await this.health.ready();
+    if (result.status !== "UP") {
       reply.status(503);
     }
-    return readiness;
+    return result;
   }
 }
