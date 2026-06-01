@@ -23,7 +23,9 @@ export function WorkspaceNavigation() {
             return (
               <Link
                 key={item.href}
-                className={active ? "workspace-nav__item workspace-nav__item--active" : "workspace-nav__item"}
+                className={
+                  active ? "workspace-nav__item workspace-nav__item--active" : "workspace-nav__item"
+                }
                 href={item.href}
                 aria-current={active ? "page" : undefined}
               >
@@ -39,7 +41,10 @@ export function WorkspaceNavigation() {
           <span>Workspace</span>
           <select
             id="workspace-route"
-            value={workspaceDestinations.find((item) => pathname.startsWith(item.href))?.href ?? "/dashboard"}
+            value={
+              workspaceDestinations.find((item) => pathname.startsWith(item.href))?.href ??
+              "/dashboard"
+            }
             onChange={(event) => {
               window.location.href = event.currentTarget.value;
             }}

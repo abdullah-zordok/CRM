@@ -31,12 +31,14 @@ export const publicNavigation: MarketingLink[] = [
 export const productFeatures: ProductFeature[] = [
   {
     title: "Lead Tracking",
-    description: "Capture, qualify, assign, and follow sales opportunities through a clear pipeline.",
+    description:
+      "Capture, qualify, assign, and follow sales opportunities through a clear pipeline.",
     icon: ContactRound,
   },
   {
     title: "Activities Timeline",
-    description: "Keep sales conversations, notes, and follow-up history visible for every account.",
+    description:
+      "Keep sales conversations, notes, and follow-up history visible for every account.",
     icon: CalendarClock,
   },
   {
@@ -97,7 +99,8 @@ export const productPrinciples = [
   },
   {
     title: "Performance Analytics",
-    description: "The product direction favors measurable sales behavior over decorative dashboards.",
+    description:
+      "The product direction favors measurable sales behavior over decorative dashboards.",
   },
 ] as const;
 

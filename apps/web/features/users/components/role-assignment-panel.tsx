@@ -39,7 +39,11 @@ export function RoleAssignmentPanel({ user }: { user: UserSummary }) {
         <button className="button button--secondary" type="button" onClick={() => assign("ADMIN")}>
           Admin
         </button>
-        <button className="button button--secondary" type="button" onClick={() => assign("MANAGER")}>
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={() => assign("MANAGER")}
+        >
           Manager
         </button>
         <button

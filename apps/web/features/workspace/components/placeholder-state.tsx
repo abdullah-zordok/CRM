@@ -8,7 +8,11 @@ interface PlaceholderStateProps {
   icon?: LucideIcon;
 }
 
-export function PlaceholderState({ title, description, icon: Icon = LayoutDashboard }: PlaceholderStateProps) {
+export function PlaceholderState({
+  title,
+  description,
+  icon: Icon = LayoutDashboard,
+}: PlaceholderStateProps) {
   return (
     <section className="placeholder-panel" aria-labelledby="placeholder-title">
       <div className="placeholder-panel__icon" aria-hidden="true">

@@ -44,10 +44,18 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
             </div>
             <div className="workspace-header__actions">
               <div className="workspace-tools" aria-label="Workspace tools">
-                <button className="icon-button" type="button" aria-label="Company switcher placeholder">
+                <button
+                  className="icon-button"
+                  type="button"
+                  aria-label="Company switcher placeholder"
+                >
                   <Building2 size={18} aria-hidden="true" />
                 </button>
-                <button className="icon-button" type="button" aria-label="Notifications placeholder">
+                <button
+                  className="icon-button"
+                  type="button"
+                  aria-label="Notifications placeholder"
+                >
                   <Bell size={18} aria-hidden="true" />
                 </button>
                 <button className="icon-button" type="button" aria-label="User menu placeholder">

@@ -14,13 +14,13 @@ Build the public-facing marketing website and the initial SaaS application shell
 
 This phase establishes:
 
-* Brand identity
-* Marketing presence
-* Routing architecture
-* Authentication entry points
-* Dashboard shell
-* Navigation foundation
-* Design system foundation
+- Brand identity
+- Marketing presence
+- Routing architecture
+- Authentication entry points
+- Dashboard shell
+- Navigation foundation
+- Design system foundation
 
 This phase MUST be completed before any CRM business functionality is implemented.
 
@@ -30,10 +30,10 @@ This phase MUST be completed before any CRM business functionality is implemente
 
 Target Audience:
 
-* Exhibition companies
-* Sales managers
-* Companies managing field sales representatives
-* Organizations tracking leads and sales performance
+- Exhibition companies
+- Sales managers
+- Companies managing field sales representatives
+- Organizations tracking leads and sales performance
 
 Primary Conversion Goal:
 
@@ -43,11 +43,11 @@ Contact Sales
 
 The website should communicate:
 
-* Accountability
-* Visibility
-* Lead Tracking
-* Revenue Intelligence
-* Performance Analytics
+- Accountability
+- Visibility
+- Lead Tracking
+- Revenue Intelligence
+- Performance Analytics
 
 ---
 
@@ -55,18 +55,18 @@ The website should communicate:
 
 Design Inspiration:
 
-* Notion
-* Odoo
+- Notion
+- Odoo
 
 Design Principles:
 
-* Clean
-* Professional
-* Enterprise-focused
-* Minimal
-* Fast
-* Modern
-* High readability
+- Clean
+- Professional
+- Enterprise-focused
+- Minimal
+- Fast
+- Modern
+- High readability
 
 ---
 
@@ -74,21 +74,21 @@ Design Principles:
 
 This phase focuses ONLY on:
 
-* UI foundation
-* Layout system
-* Navigation system
-* Routing architecture
-* Marketing website
-* Dashboard shell
+- UI foundation
+- Layout system
+- Navigation system
+- Routing architecture
+- Marketing website
+- Dashboard shell
 
 This phase MUST NOT include:
 
-* CRM business logic
-* Lead management
-* Deals management
-* Analytics implementation
-* Notifications implementation
-* AI functionality
+- CRM business logic
+- Lead management
+- Deals management
+- Analytics implementation
+- Notifications implementation
+- AI functionality
 
 ---
 
@@ -104,13 +104,13 @@ Route:
 
 Sections:
 
-* Hero
-* Problem Statement
-* Solution Overview
-* Features Overview
-* Lead Lifecycle Flow
-* Dashboard Preview
-* Contact Sales CTA
+- Hero
+- Problem Statement
+- Solution Overview
+- Features Overview
+- Lead Lifecycle Flow
+- Dashboard Preview
+- Contact Sales CTA
 
 ---
 
@@ -124,13 +124,13 @@ Route:
 
 Sections:
 
-* Lead Tracking
-* Activities Timeline
-* Exhibitions
-* Deals & Revenue
-* Targets & Commissions
-* Analytics
-* Notifications
+- Lead Tracking
+- Activities Timeline
+- Exhibitions
+- Deals & Revenue
+- Targets & Commissions
+- Analytics
+- Notifications
 
 ---
 
@@ -144,9 +144,9 @@ Route:
 
 Sections:
 
-* Product Vision
-* Mission
-* Platform Philosophy
+- Product Vision
+- Mission
+- Platform Philosophy
 
 ---
 
@@ -166,11 +166,11 @@ Contact Sales
 
 Form Fields:
 
-* Name
-* Company
-* Email
-* Phone
-* Message
+- Name
+- Company
+- Email
+- Phone
+- Message
 
 No backend submission required yet.
 
@@ -246,9 +246,9 @@ The following routes MUST exist as placeholders:
 
 Each route should contain:
 
-* page structure
-* placeholder content
-* layout integration
+- page structure
+- placeholder content
+- layout integration
 
 No business logic.
 
@@ -279,9 +279,9 @@ Settings
 
 Include:
 
-* User menu placeholder
-* Company switcher placeholder
-* Notifications placeholder
+- User menu placeholder
+- Company switcher placeholder
+- Notifications placeholder
 
 ---
 
@@ -291,11 +291,11 @@ This phase MUST establish the complete routing architecture for future phases.
 
 Requirements:
 
-* App Router
-* Route groups
-* Nested layouts
-* Protected route structure
-* Public route structure
+- App Router
+- Route groups
+- Nested layouts
+- Protected route structure
+- Public route structure
 
 Future phases should plug into existing routes without restructuring navigation.
 
@@ -305,9 +305,9 @@ Future phases should plug into existing routes without restructuring navigation.
 
 Support:
 
-* Desktop
-* Tablet
-* Mobile
+- Desktop
+- Tablet
+- Mobile
 
 Navigation must adapt responsively.
 
@@ -317,12 +317,12 @@ Navigation must adapt responsively.
 
 Frontend Stack:
 
-* Next.js
-* TypeScript
-* App Router
-* Tailwind CSS
-* shadcn/ui
-* React Query
+- Next.js
+- TypeScript
+- App Router
+- Tailwind CSS
+- shadcn/ui
+- React Query
 
 ---
 
@@ -347,15 +347,15 @@ src/
 
 The phase is complete when:
 
-* Marketing website is fully navigable
-* All public pages exist
-* Authentication pages exist
-* Dashboard shell exists
-* Sidebar navigation works
-* Routing architecture is complete
-* Future routes exist as placeholders
-* Responsive layouts are implemented
-* Shared design system foundation is established
+- Marketing website is fully navigable
+- All public pages exist
+- Authentication pages exist
+- Dashboard shell exists
+- Sidebar navigation works
+- Routing architecture is complete
+- Future routes exist as placeholders
+- Responsive layouts are implemented
+- Shared design system foundation is established
 
 ---
 
@@ -387,10 +387,11 @@ $speckit-implement
 
 Implementation must follow:
 
-* task-by-task execution
-* continuous testing
-* no unrelated file modifications
-* reusable architecture patterns
+- task-by-task execution
+- continuous testing
+- no unrelated file modifications
+- reusable architecture patterns
 
 ```
+
 ```

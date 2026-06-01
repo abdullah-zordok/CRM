@@ -1,7 +1,10 @@
 "use client";
 
 import { useId, useState } from "react";
-import { validateContactSales, type ContactSalesInput } from "../validation/contact-sales-validation";
+import {
+  validateContactSales,
+  type ContactSalesInput,
+} from "../validation/contact-sales-validation";
 
 type FieldName = keyof ContactSalesInput;
 
