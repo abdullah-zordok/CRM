@@ -9,7 +9,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  if (!response.ok) {
+    let message = `Request failed: ${response.status}`;
+    try {
+      const body = (await response.json()) as { message?: unknown; error?: unknown };
+      if (typeof body.message === "string") {
+        message = body.message;
+      } else if (Array.isArray(body.message)) {
+        message = body.message.join(" ");
+      } else if (typeof body.error === "string") {
+        message = body.error;
+      }
+    } catch {
+      // Keep the status-based fallback when the API does not return JSON.
+    }
+    throw new Error(message);
+  }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }

@@ -5,37 +5,58 @@ import { createUser } from "../api/users-client";
 
 export function UserForm() {
   const [message, setMessage] = useState<string>();
+  const [error, setError] = useState<string>();
 
   async function submit(formData: FormData) {
-    await createUser({
-      email: String(formData.get("email")),
-      displayName: String(formData.get("displayName")),
-      roles: [String(formData.get("role") ?? "SALES_REPRESENTATIVE")],
-      status: "PENDING_ACTIVATION",
-    });
-    setMessage("User created with activation pending.");
+    setError(undefined);
+    setMessage(undefined);
+
+    try {
+      await createUser({
+        email: String(formData.get("email") ?? "").trim(),
+        displayName: String(formData.get("displayName") ?? "").trim(),
+        roles: [String(formData.get("role") ?? "SALES_REPRESENTATIVE")],
+        status: "PENDING_ACTIVATION",
+      });
+      setMessage("User created with activation pending.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to create user.");
+    }
   }
 
   return (
-    <form action={submit}>
-      <label>
-        Email
+    <form className="user-form" action={submit} aria-label="Create user">
+      <label className="field">
+        <span>Email</span>
         <input name="email" type="email" required />
       </label>
-      <label>
-        Display name
+      <label className="field">
+        <span>Display name</span>
         <input name="displayName" required />
       </label>
-      <label>
-        Role
+      <label className="field">
+        <span>Role</span>
         <select name="role" defaultValue="SALES_REPRESENTATIVE">
           <option value="ADMIN">Admin</option>
           <option value="MANAGER">Manager</option>
           <option value="SALES_REPRESENTATIVE">Sales Representative</option>
         </select>
       </label>
-      <button type="submit">Create user</button>
-      {message ? <p>{message}</p> : null}
+      <div className="user-form__actions">
+        <button className="button button--primary" type="submit">
+          Create user
+        </button>
+        {message ? (
+          <p className="status-message" role="status">
+            {message}
+          </p>
+        ) : null}
+        {error ? (
+          <p className="status-message status-message--error" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </div>
     </form>
   );
 }

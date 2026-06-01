@@ -10,6 +10,9 @@ export default defineConfig({
     url: webBaseUrl,
     reuseExistingServer: true,
     timeout: 120_000,
+    env: {
+      CRM_E2E_AUTH_BYPASS: "true",
+    },
   },
   use: {
     baseURL: webBaseUrl,

@@ -18,18 +18,27 @@ export function UserList() {
   }, []);
 
   return (
-    <main>
-      <h1>Users</h1>
+    <section className="user-page" aria-labelledby="users-title">
+      <div className="user-page__header">
+        <p className="eyebrow">User administration</p>
+        <h1 id="users-title">Users</h1>
+      </div>
       <UserForm />
-      {error ? <p role="alert">{error}</p> : null}
-      {users.length === 0 ? <p>No users match the current filters.</p> : null}
-      <ul>
+      {error ? (
+        <p className="status-message status-message--error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {users.length === 0 ? (
+        <p className="empty-state">No users match the current filters.</p>
+      ) : null}
+      <ul className="user-list">
         {users.map((user) => (
           <li key={user.id}>
             <UserDetail user={user} />
           </li>
         ))}
       </ul>
-    </main>
+    </section>
   );
 }
