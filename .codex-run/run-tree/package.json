@@ -1,0 +1,35 @@
+{
+  "name": "sales-operations-crm",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @crm/api --filter @crm/web dev",
+    "build": "pnpm --recursive build",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "test:unit": "pnpm --recursive --if-present test:unit",
+    "test:contract": "pnpm --filter @crm/api test:contract",
+    "test:integration": "pnpm --filter @crm/api test:integration",
+    "test:e2e": "pnpm --filter @crm/web test:e2e",
+    "db:migrate": "pnpm --filter @crm/api db:migrate",
+    "db:seed": "pnpm --filter @crm/api db:seed",
+    "verify:foundation": "tsx packages/test-utils/src/verify-foundation.ts",
+    "ci:verify": "tsx packages/test-utils/src/ci-verify.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.28.0",
+    "@playwright/test": "1.52.0",
+    "@types/node": "24.0.0",
+    "eslint": "9.28.0",
+    "prettier": "3.5.3",
+    "tsx": "4.19.4",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.34.0",
+    "vitest": "3.2.3"
+  }
+}
