@@ -15,4 +15,7 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+.codex-run/
+.opencode/
+*.tsbuildinfo
 

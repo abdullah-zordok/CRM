@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
+import { SessionGuard } from "../../common/guards/session.guard.js";
 import { AuthController } from "./auth.controller.js";
 import { AuthRepository } from "./auth.repository.js";
 import { AuthService } from "./auth.service.js";
-import { SecurityAuditRepository } from "./audit/security-audit.repository.js";
 import { SecurityAuditService } from "./audit/security-audit.service.js";
 import { PasswordService } from "./security/password.service.js";
 import { SessionTokenService } from "./security/session-token.service.js";
@@ -10,13 +10,13 @@ import { SessionTokenService } from "./security/session-token.service.js";
 @Module({
   controllers: [AuthController],
   providers: [
-    AuthService,
     AuthRepository,
+    AuthService,
     PasswordService,
     SessionTokenService,
-    SecurityAuditRepository,
     SecurityAuditService,
+    SessionGuard,
   ],
-  exports: [AuthService, SecurityAuditService],
+  exports: [AuthService, PasswordService, SessionTokenService, SecurityAuditService, SessionGuard],
 })
 export class AuthModule {}

@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - "001-foundation-architecture"
+      - "002-users-rbac"
 
 jobs:
   foundation:

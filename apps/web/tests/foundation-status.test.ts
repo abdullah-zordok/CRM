@@ -1,7 +1,29 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { getFoundationStatus } from "../features/foundation/api/foundation-status";
 
-describe("foundation web test harness", () => {
-  it("loads the foundation test environment", () => {
-    expect("foundation").toBe("foundation");
+describe("getFoundationStatus", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns readiness status from the API", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ status: "UP", correlationId: "test-correlation-id" }),
+      }),
+    );
+
+    await expect(getFoundationStatus()).resolves.toEqual({
+      status: "UP",
+      correlationId: "test-correlation-id",
+    });
+  });
+
+  it("fails closed when the readiness call fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network unavailable")));
+
+    await expect(getFoundationStatus()).resolves.toEqual({ status: "DOWN" });
   });
 });

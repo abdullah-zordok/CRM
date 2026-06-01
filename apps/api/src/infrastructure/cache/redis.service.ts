@@ -5,23 +5,36 @@ import { EnvService } from "../../config/env.service.js";
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
-  readonly client: Redis;
+  private readonly redisUrl: string;
+  private readonly client: Redis;
 
   constructor(env: EnvService) {
-    this.client = new Redis(env.get("REDIS_URL"), {
+    this.redisUrl = env.get("REDIS_URL");
+    this.client = new Redis(this.redisUrl, {
       lazyConnect: true,
-      maxRetriesPerRequest: 2,
+      maxRetriesPerRequest: 1,
     });
   }
 
-  async ping() {
+  async ping(): Promise<string> {
     if (this.client.status === "wait") {
       await this.client.connect();
     }
     return this.client.ping();
   }
 
-  async onModuleDestroy() {
-    await this.client.quit();
+  get connection(): Redis {
+    return this.client;
+  }
+
+  createQueueConnection(): Redis {
+    return new Redis(this.redisUrl, {
+      lazyConnect: true,
+      maxRetriesPerRequest: null,
+    });
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    this.client.disconnect();
   }
 }

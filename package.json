@@ -19,6 +19,8 @@
     "db:migrate": "pnpm --filter @crm/api db:migrate",
     "db:seed": "pnpm --filter @crm/api db:seed",
     "verify:foundation": "tsx packages/test-utils/src/verify-foundation.ts",
+    "verify:users-rbac": "tsx packages/test-utils/src/verify-users-rbac.ts",
+    "verify:leads-core": "tsx packages/test-utils/src/verify-leads-core.ts",
     "ci:verify": "tsx packages/test-utils/src/ci-verify.ts"
   },
   "devDependencies": {

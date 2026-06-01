@@ -1,10 +1,10 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { AuthSessionStatus, SecurityAuditEventType, SecurityAuditOutcome } from "@prisma/client";
+import { AuthSessionStatus, SecurityAuditOutcome } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { AuthRepository } from "./auth.repository.js";
+import { SecurityAuditService } from "./audit/security-audit.service.js";
 import { PasswordService } from "./security/password.service.js";
 import { SessionTokenService } from "./security/session-token.service.js";
-import { SecurityAuditService } from "./audit/security-audit.service.js";
 
 const sessionTtlMs = 1000 * 60 * 60 * 8;
 
@@ -19,24 +19,26 @@ export class AuthService {
 
   async login(email: string, password: string, correlationId = randomUUID()) {
     const user = await this.repository.findUserByEmail(email);
-    if (!user || !this.repository.isActive(user.status)) {
-      await this.audit.record(
-        SecurityAuditEventType.LOGIN_FAILURE,
-        SecurityAuditOutcome.FAILURE,
+    if (!user || !user.passwordHash || !this.repository.isActive(user.status)) {
+      await this.audit.record({
+        eventType: "LOGIN_FAILURE",
+        outcome: SecurityAuditOutcome.FAILURE,
         correlationId,
-        { email },
-      );
+        resource: "auth",
+        metadata: { email },
+      });
       throw new UnauthorizedException("Invalid credentials");
     }
 
     const ok = await this.passwords.verify(user.passwordHash, password);
     if (!ok) {
-      await this.audit.record(
-        SecurityAuditEventType.LOGIN_FAILURE,
-        SecurityAuditOutcome.FAILURE,
+      await this.audit.record({
+        eventType: "LOGIN_FAILURE",
+        outcome: SecurityAuditOutcome.FAILURE,
         correlationId,
-        { email },
-      );
+        resource: "auth",
+        metadata: { email },
+      });
       throw new UnauthorizedException("Invalid credentials");
     }
 
@@ -46,26 +48,31 @@ export class AuthService {
       this.tokens.hash(token),
       new Date(Date.now() + sessionTtlMs),
     );
-    await this.audit.record(
-      SecurityAuditEventType.LOGIN_SUCCESS,
-      SecurityAuditOutcome.SUCCESS,
+    await this.audit.record({
+      eventType: "LOGIN_SUCCESS",
+      outcome: SecurityAuditOutcome.SUCCESS,
+      actorUserId: user.id,
+      targetUserId: user.id,
+      sessionId: session.id,
       correlationId,
-      {
-        userId: user.id,
-        sessionId: session.id,
-      },
-    );
+      resource: "auth",
+    });
 
     return { token, sessionId: session.id };
   }
 
   async logout(token: string, correlationId = randomUUID()) {
+    const session = await this.repository.findActiveSession(this.tokens.hash(token));
     await this.repository.revokeSession(this.tokens.hash(token));
-    await this.audit.record(
-      SecurityAuditEventType.LOGOUT,
-      SecurityAuditOutcome.SUCCESS,
+    await this.audit.record({
+      eventType: "LOGOUT",
+      outcome: SecurityAuditOutcome.SUCCESS,
+      actorUserId: session?.userId,
+      targetUserId: session?.userId,
+      sessionId: session?.id,
       correlationId,
-    );
+      resource: "auth",
+    });
   }
 
   async validateSession(token: string) {
@@ -73,16 +80,34 @@ export class AuthService {
     if (
       !session ||
       session.status !== AuthSessionStatus.ACTIVE ||
-      session.expiresAt <= new Date()
+      session.expiresAt <= new Date() ||
+      !this.repository.isActive(session.user.status)
     ) {
       throw new UnauthorizedException("Invalid session");
     }
+    const activeMembership = session.user.teamMemberships.find(
+      (entry) => entry.status === "ACTIVE",
+    );
 
     return {
       id: session.user.id,
       email: session.user.email,
+      displayName: session.user.displayName,
+      status: session.user.status,
       sessionId: session.id,
-      roles: session.user.roles.map((entry) => entry.role.code),
+      roles: session.user.roleAssignments
+        .filter((entry) => entry.status === "ACTIVE")
+        .map((entry) => entry.roleCode),
+      hasReviewerAccess: session.user.reviewerAssignments.some(
+        (entry) => entry.status === "ACTIVE",
+      ),
+      activeTeam: activeMembership
+        ? {
+            id: activeMembership.team.id,
+            name: activeMembership.team.name,
+            status: activeMembership.team.status,
+          }
+        : undefined,
     };
   }
 }

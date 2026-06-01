@@ -1,46 +1,65 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+  UsePipes,
+} from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { ZodValidationPipe } from "../../common/validation/zod-validation.pipe.js";
 import { getCorrelationId } from "../../common/middleware/correlation.middleware.js";
+import { ZodValidationPipe } from "../../common/validation/zod-validation.pipe.js";
 import { SessionGuard, type AuthenticatedRequest } from "../../common/guards/session.guard.js";
 import { AuthService } from "./auth.service.js";
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z
+    .string()
+    .email()
+    .max(320)
+    .transform((email) => email.toLowerCase()),
   password: z.string().min(12).max(128),
 });
+
+type LoginInput = z.infer<typeof loginSchema>;
 
 @Controller("auth")
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post("login")
+  @UsePipes(new ZodValidationPipe(loginSchema))
   async login(
-    @Body(new ZodValidationPipe(loginSchema)) body: z.infer<typeof loginSchema>,
+    @Body() body: LoginInput,
     @Req() request: FastifyRequest,
-    @Res({ passthrough: true }) reply: FastifyReply,
+    @Res() reply: FastifyReply,
   ) {
-    const result = await this.auth.login(body.email, body.password, getCorrelationId(request));
-    reply.setCookie("crm_session", result.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 8,
-    });
-    reply.status(204);
+    const session = await this.auth.login(body.email, body.password, getCorrelationId(request));
+    reply
+      .setCookie("crm_session", session.token, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 8,
+      })
+      .status(204)
+      .send();
   }
 
   @Post("logout")
   @UseGuards(SessionGuard)
-  async logout(@Req() request: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+  async logout(@Req() request: FastifyRequest, @Res() reply: FastifyReply) {
     const token = request.cookies?.crm_session;
-    if (token) {
-      await this.auth.logout(token, getCorrelationId(request));
+    if (!token) {
+      throw new UnauthorizedException("Authentication required");
     }
-    reply.clearCookie("crm_session", { path: "/" });
-    reply.status(204);
+    await this.auth.logout(token, getCorrelationId(request));
+    reply.clearCookie("crm_session", { path: "/" }).status(204).send();
   }
 
   @Get("me")
@@ -49,8 +68,9 @@ export class AuthController {
     return {
       id: request.user?.id,
       email: request.user?.email,
-      displayName: "Seeded Admin",
+      displayName: request.user?.displayName,
       roles: request.user?.roles ?? [],
+      hasReviewerAccess: request.user?.hasReviewerAccess ?? false,
       correlationId: getCorrelationId(request),
     };
   }

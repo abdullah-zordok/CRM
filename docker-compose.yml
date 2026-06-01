@@ -29,6 +29,9 @@ services:
       dockerfile: infra/docker/api.Dockerfile
     env_file:
       - apps/api/.env
+    environment:
+      DATABASE_URL: postgresql://crm:crm_local_password@postgres:5432/crm_foundation
+      REDIS_URL: redis://redis:6379
     ports:
       - "3001:3001"
     depends_on:

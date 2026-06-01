@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSession, type CurrentUser } from "@/features/foundation/auth/auth-client";
+import { currentUser, type CurrentUser } from "./auth-client";
 
 export function useSession() {
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<CurrentUser | null>();
 
   useEffect(() => {
-    void getSession()
+    currentUser()
       .then(setUser)
-      .finally(() => setLoading(false));
+      .catch(() => setUser(null));
   }, []);
 
-  return { user, loading };
+  return { user, loading: user === undefined };
 }

@@ -7,15 +7,452 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum FoundationUserStatus {
+model PlatformUser {
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email               String               @unique
+  displayName         String
+  passwordHash        String?
+  status              PlatformUserStatus   @default(PENDING_ACTIVATION)
+  activatedAt         DateTime?            @db.Timestamp(6)
+  disabledAt          DateTime?            @db.Timestamp(6)
+  createdAt           DateTime             @default(now()) @db.Timestamp(6)
+  updatedAt           DateTime             @updatedAt @db.Timestamp(6)
+  activationTokens    ActivationToken[]
+  reviewerAssignments ReviewerAssignment[]
+  roleAssignments     RoleAssignment[]
+  sessions            AuthSession[]
+  teamMemberships     TeamMembership[]
+  createdLeads        Lead[]               @relation("LeadCreator")
+  ownedLeads          Lead[]               @relation("LeadOwner")
+
+  @@index([status])
+  @@index([displayName])
+  @@index([email])
+}
+
+model BusinessRole {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            BusinessRoleCode @unique
+  name            String
+  description     String
+  isSystemManaged Boolean          @default(true)
+  createdAt       DateTime         @default(now()) @db.Timestamp(6)
+  assignments     RoleAssignment[]
+}
+
+model Permission {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String            @unique
+  resource    String
+  action      String
+  description String
+  createdAt   DateTime          @default(now()) @db.Timestamp(6)
+  grants      PermissionGrant[]
+}
+
+model PermissionGrant {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  granteeType    GranteeType
+  granteeCode    String
+  permissionCode String
+  createdAt      DateTime    @default(now()) @db.Timestamp(6)
+  permission     Permission  @relation(fields: [permissionCode], references: [code], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([granteeType, granteeCode, permissionCode])
+  @@index([granteeCode])
+}
+
+model RoleAssignment {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String           @db.Uuid
+  roleCode         BusinessRoleCode
+  assignedByUserId String?          @db.Uuid
+  assignedAt       DateTime         @default(now()) @db.Timestamp(6)
+  removedByUserId  String?          @db.Uuid
+  removedAt        DateTime?        @db.Timestamp(6)
+  status           AssignmentStatus @default(ACTIVE)
+  role             BusinessRole     @relation(fields: [roleCode], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  user             PlatformUser     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId, status])
+  @@index([roleCode, status])
+}
+
+model ReviewerAssignment {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String           @db.Uuid
+  assignedByUserId String?          @db.Uuid
+  assignedAt       DateTime         @default(now()) @db.Timestamp(6)
+  removedByUserId  String?          @db.Uuid
+  removedAt        DateTime?        @db.Timestamp(6)
+  status           AssignmentStatus @default(ACTIVE)
+  user             PlatformUser     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId, status])
+}
+
+model Team {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  status          TeamStatus       @default(ACTIVE)
+  createdByUserId String?          @db.Uuid
+  createdAt       DateTime         @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime         @updatedAt @db.Timestamp(6)
+  deactivatedAt   DateTime?        @db.Timestamp(6)
+  memberships     TeamMembership[]
+  leads           Lead[]
+
+  @@index([name])
+  @@index([status])
+}
+
+model TeamMembership {
+  id               String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String               @db.Uuid
+  teamId           String               @db.Uuid
+  membershipType   TeamMembershipType
+  status           TeamMembershipStatus @default(ACTIVE)
+  assignedByUserId String?              @db.Uuid
+  assignedAt       DateTime             @default(now()) @db.Timestamp(6)
+  endedByUserId    String?              @db.Uuid
+  endedAt          DateTime?            @db.Timestamp(6)
+  team             Team                 @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user             PlatformUser         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([teamId, status])
+  @@index([userId, status])
+}
+
+model ActivationToken {
+  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String                @db.Uuid
+  tokenHash       String                @unique
+  status          ActivationTokenStatus @default(ACTIVE)
+  expiresAt       DateTime              @db.Timestamp(6)
+  usedAt          DateTime?             @db.Timestamp(6)
+  revokedAt       DateTime?             @db.Timestamp(6)
+  createdByUserId String?               @db.Uuid
+  createdAt       DateTime              @default(now()) @db.Timestamp(6)
+  user            PlatformUser          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId, status])
+  @@index([expiresAt])
+}
+
+model AuthSession {
+  id               String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String                       @db.Uuid
+  sessionHash      String                       @unique
+  status           AuthSessionStatus            @default(ACTIVE)
+  issuedAt         DateTime                     @default(now()) @db.Timestamp(6)
+  expiresAt        DateTime                     @db.Timestamp(6)
+  revokedAt        DateTime?                    @db.Timestamp(6)
+  revocationReason AuthSessionRevocationReason?
+  lastSeenAt       DateTime?                    @db.Timestamp(6)
+  user             PlatformUser                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId, status])
+}
+
+model AccessDecision {
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String?             @db.Uuid
+  permissionCode String
+  resource       String
+  action         String
+  decision       AccessDecisionValue
+  reason         String
+  correlationId  String
+  decidedAt      DateTime            @default(now()) @db.Timestamp(6)
+
+  @@index([correlationId])
+  @@index([permissionCode, decision])
+}
+
+model SecurityAuditRecord {
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventType     String
+  actorUserId   String?              @db.Uuid
+  targetUserId  String?              @db.Uuid
+  sessionId     String?              @db.Uuid
+  resource      String?
+  outcome       SecurityAuditOutcome
+  ipAddress     String?
+  userAgent     String?
+  correlationId String
+  metadata      Json                 @default("{}")
+  createdAt     DateTime             @default(now()) @db.Timestamp(6)
+
+  @@index([actorUserId])
+  @@index([targetUserId])
+  @@index([eventType, outcome, createdAt])
+  @@index([correlationId])
+}
+
+model OperationalEvent {
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  version        Int                    @default(1)
+  payload        Json                   @default("{}")
+  idempotencyKey String                 @unique
+  correlationId  String
+  status         OperationalEventStatus @default(RECORDED)
+  createdAt      DateTime               @default(now()) @db.Timestamp(6)
+  handledAt      DateTime?              @db.Timestamp(6)
+  jobs           BackgroundJob[]
+
+  @@index([correlationId])
+  @@index([status])
+}
+
+model BackgroundJob {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  operationalEventId String?             @db.Uuid
+  queueName          String
+  jobType            String
+  status             BackgroundJobStatus @default(QUEUED)
+  attempts           Int                 @default(0)
+  maxAttempts        Int
+  idempotencyKey     String              @unique
+  correlationId      String
+  lastError          String?
+  createdAt          DateTime            @default(now()) @db.Timestamp(6)
+  startedAt          DateTime?           @db.Timestamp(6)
+  completedAt        DateTime?           @db.Timestamp(6)
+  event              OperationalEvent?   @relation(fields: [operationalEventId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([status])
+  @@index([correlationId])
+}
+
+model LeadSource {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code      String           @unique
+  name      String
+  status    LeadSourceStatus @default(ACTIVE)
+  createdAt DateTime         @default(now()) @db.Timestamp(6)
+  updatedAt DateTime         @updatedAt @db.Timestamp(6)
+  leads     Lead[]
+
+  @@index([status])
+}
+
+model Lead {
+  id                  String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  displayName         String
+  company             String?
+  email               String?
+  normalizedEmail     String?
+  phone               String?
+  normalizedPhone     String?
+  sourceCode          String
+  status              LeadStatus               @default(NEW)
+  priority            LeadPriority
+  budgetAmount        Decimal?                 @db.Decimal(14, 2)
+  budgetCurrency      String?
+  ownerUserId         String                   @db.Uuid
+  teamId              String?                  @db.Uuid
+  createdByUserId     String                   @db.Uuid
+  version             Int                      @default(1)
+  createdAt           DateTime                 @default(now()) @db.Timestamp(6)
+  updatedAt           DateTime                 @updatedAt @db.Timestamp(6)
+  archivedAt          DateTime?                @db.Timestamp(6)
+  source              LeadSource               @relation(fields: [sourceCode], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  owner               PlatformUser             @relation("LeadOwner", fields: [ownerUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  creator             PlatformUser             @relation("LeadCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  team                Team?                    @relation(fields: [teamId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  exhibitionReference LeadExhibitionReference?
+  assignments         LeadAssignment[]
+  statusHistory       LeadStatusHistory[]
+  notes               LeadNote[]
+  historyEntries      LeadHistoryEntry[]
+  accessDecisions     LeadAccessDecision[]
+  domainEvents        LeadDomainEvent[]
+
+  @@index([status])
+  @@index([sourceCode])
+  @@index([priority])
+  @@index([ownerUserId])
+  @@index([teamId])
+  @@index([createdByUserId])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([displayName])
+  @@index([company])
+  @@index([normalizedEmail])
+  @@index([normalizedPhone])
+  @@index([version])
+}
+
+model LeadExhibitionReference {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId          String    @unique @db.Uuid
+  name            String
+  date            DateTime? @db.Date
+  location        String?
+  createdByUserId String?   @db.Uuid
+  updatedByUserId String?   @db.Uuid
+  createdAt       DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime  @updatedAt @db.Timestamp(6)
+  lead            Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([name])
+  @@index([date])
+}
+
+model LeadAssignment {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId           String   @db.Uuid
+  fromUserId       String?  @db.Uuid
+  toUserId         String   @db.Uuid
+  fromTeamId       String?  @db.Uuid
+  toTeamId         String?  @db.Uuid
+  assignedByUserId String   @db.Uuid
+  reason           String?
+  createdAt        DateTime @default(now()) @db.Timestamp(6)
+  correlationId    String
+  lead             Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([leadId])
+  @@index([toUserId])
+  @@index([toTeamId])
+  @@index([createdAt])
+  @@index([correlationId])
+}
+
+model LeadStatusHistory {
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId          String               @db.Uuid
+  fromStatus      LeadStatus?
+  toStatus        LeadStatus
+  changedByUserId String               @db.Uuid
+  changeType      LeadStatusChangeType
+  reason          String?
+  createdAt       DateTime             @default(now()) @db.Timestamp(6)
+  correlationId   String
+  lead            Lead                 @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([leadId])
+  @@index([toStatus])
+  @@index([createdAt])
+  @@index([correlationId])
+}
+
+model LeadNote {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId        String   @db.Uuid
+  authorUserId  String   @db.Uuid
+  body          String
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+  correlationId String
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([leadId])
+  @@index([authorUserId])
+  @@index([createdAt])
+  @@index([correlationId])
+}
+
+model LeadHistoryEntry {
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId        String               @db.Uuid
+  entryType     LeadHistoryEntryType
+  actorUserId   String?              @db.Uuid
+  summary       String
+  metadata      Json                 @default("{}")
+  createdAt     DateTime             @default(now()) @db.Timestamp(6)
+  correlationId String
+  lead          Lead                 @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([leadId])
+  @@index([entryType])
+  @@index([actorUserId])
+  @@index([createdAt])
+  @@index([correlationId])
+}
+
+model LeadAccessDecision {
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String?             @db.Uuid
+  leadId        String?             @db.Uuid
+  action        LeadAction
+  decision      AccessDecisionValue
+  reason        String
+  scope         LeadAccessScope
+  createdAt     DateTime            @default(now()) @db.Timestamp(6)
+  correlationId String
+  lead          Lead?               @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([leadId])
+  @@index([action])
+  @@index([decision])
+  @@index([createdAt])
+  @@index([correlationId])
+}
+
+model LeadDomainEvent {
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           LeadDomainEventName
+  version        Int                    @default(1)
+  leadId         String                 @db.Uuid
+  payload        Json                   @default("{}")
+  idempotencyKey String                 @unique
+  correlationId  String
+  status         OperationalEventStatus @default(RECORDED)
+  createdAt      DateTime               @default(now()) @db.Timestamp(6)
+  handledAt      DateTime?              @db.Timestamp(6)
+  lead           Lead                   @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([leadId])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt])
+  @@index([correlationId])
+}
+
+enum PlatformUserStatus {
+  PENDING_ACTIVATION
   ACTIVE
   DISABLED
 }
 
-enum RoleCategoryCode {
+enum BusinessRoleCode {
   ADMIN
   MANAGER
   SALES_REPRESENTATIVE
+}
+
+enum GranteeType {
+  BUSINESS_ROLE
+  ACCESS_PROFILE
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  REMOVED
+}
+
+enum TeamStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TeamMembershipType {
+  MEMBER
+  MANAGER
+}
+
+enum TeamMembershipStatus {
+  ACTIVE
+  ENDED
+}
+
+enum ActivationTokenStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  REVOKED
 }
 
 enum AuthSessionStatus {
@@ -24,19 +461,17 @@ enum AuthSessionStatus {
   EXPIRED
 }
 
+enum AuthSessionRevocationReason {
+  LOGOUT
+  USER_DISABLED
+  ROLE_REMOVED
+  REVIEWER_ACCESS_REMOVED
+  SECURITY_REVOKE
+}
+
 enum AccessDecisionValue {
   ALLOW
   DENY
-}
-
-enum SecurityAuditEventType {
-  LOGIN_SUCCESS
-  LOGIN_FAILURE
-  LOGOUT
-  ACCESS_DENIED
-  ACCESS_ALLOWED
-  CONFIG_ERROR
-  SYSTEM_STARTUP
 }
 
 enum SecurityAuditOutcome {
@@ -60,117 +495,74 @@ enum BackgroundJobStatus {
   RETRYING
 }
 
-model FoundationUser {
-  id           String               @id @default(uuid()) @db.Uuid
-  email        String               @unique
-  displayName  String
-  passwordHash String
-  status       FoundationUserStatus @default(ACTIVE)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  roles        FoundationUserRole[]
-  sessions     AuthSession[]
-  audits       SecurityAuditRecord[]
+enum LeadSourceStatus {
+  ACTIVE
+  INACTIVE
 }
 
-model RoleCategory {
-  id          String                @id @default(uuid()) @db.Uuid
-  code        RoleCategoryCode      @unique
-  name        String
-  description String
-  createdAt   DateTime              @default(now())
-  users       FoundationUserRole[]
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  NEGOTIATION
+  WON
+  LOST
+  ARCHIVED
 }
 
-model FoundationUserRole {
-  userId     String         @db.Uuid
-  roleId     String         @db.Uuid
-  assignedAt DateTime       @default(now())
-  role       RoleCategory   @relation(fields: [roleId], references: [id])
-  user       FoundationUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([userId, roleId])
+enum LeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
-model AuthSession {
-  id          String               @id @default(uuid()) @db.Uuid
-  userId      String               @db.Uuid
-  sessionHash String               @unique
-  status      AuthSessionStatus    @default(ACTIVE)
-  issuedAt    DateTime             @default(now())
-  expiresAt   DateTime
-  revokedAt   DateTime?
-  lastSeenAt  DateTime?
-  user        FoundationUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  audits      SecurityAuditRecord[]
-
-  @@index([userId, status])
+enum LeadStatusChangeType {
+  NORMAL_FLOW
+  CORRECTION
+  ARCHIVE
+  RESTORE
 }
 
-model AccessDecision {
-  id            String              @id @default(uuid()) @db.Uuid
-  userId        String?             @db.Uuid
-  resource      String
-  action        String
-  decision      AccessDecisionValue
-  reason        String
-  correlationId String
-  decidedAt     DateTime            @default(now())
-
-  @@index([correlationId])
+enum LeadHistoryEntryType {
+  CREATED
+  CONTACT_UPDATED
+  ASSIGNED
+  STATUS_CHANGED
+  STATUS_CORRECTED
+  ARCHIVED
+  RESTORED
+  SOURCE_CHANGED
+  EXHIBITION_REFERENCE_CHANGED
+  NOTE_ADDED
+  DUPLICATE_BLOCKED
+  STALE_UPDATE_REJECTED
 }
 
-model SecurityAuditRecord {
-  id            String                 @id @default(uuid()) @db.Uuid
-  eventType     SecurityAuditEventType
-  actorUserId   String?                @db.Uuid
-  sessionId     String?                @db.Uuid
-  resource      String?
-  outcome       SecurityAuditOutcome
-  ipAddress     String?
-  userAgent     String?
-  correlationId String
-  metadata      Json                   @default("{}")
-  createdAt     DateTime               @default(now())
-  actor         FoundationUser?        @relation(fields: [actorUserId], references: [id])
-  session       AuthSession?           @relation(fields: [sessionId], references: [id])
-
-  @@index([correlationId])
-  @@index([createdAt])
+enum LeadAction {
+  CREATE
+  VIEW
+  UPDATE
+  ASSIGN
+  CHANGE_STATUS
+  ADD_NOTE
+  VIEW_HISTORY
+  SEARCH
 }
 
-model OperationalEvent {
-  id            String                 @id @default(uuid()) @db.Uuid
-  name          String
-  version       Int
-  payload       Json                   @default("{}")
-  correlationId String
-  status        OperationalEventStatus @default(RECORDED)
-  createdAt     DateTime               @default(now())
-  handledAt     DateTime?
-  jobs          BackgroundJob[]
-
-  @@index([correlationId])
-  @@index([status])
+enum LeadAccessScope {
+  GLOBAL
+  TEAM
+  OWNED
+  EXPLICIT
+  NONE
 }
 
-model BackgroundJob {
-  id             String              @id @default(uuid()) @db.Uuid
-  operationalEventId String?         @db.Uuid
-  queueName      String
-  jobType        String
-  status         BackgroundJobStatus @default(QUEUED)
-  attempts       Int                 @default(0)
-  maxAttempts    Int
-  idempotencyKey String              @unique
-  correlationId  String
-  lastError      String?
-  createdAt      DateTime            @default(now())
-  startedAt      DateTime?
-  completedAt    DateTime?
-  event          OperationalEvent?   @relation(fields: [operationalEventId], references: [id])
-
-  @@index([status])
-  @@index([correlationId])
+enum LeadDomainEventName {
+  LeadCreated
+  LeadAssigned
+  LeadStatusChanged
+  LeadSourceChanged
+  LeadExhibitionReferenceChanged
+  LeadNoteAdded
 }
-

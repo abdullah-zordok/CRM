@@ -7,8 +7,12 @@ export type AuthenticatedRequest = FastifyRequest & {
   user?: {
     id: string;
     email: string;
+    displayName: string;
+    status: string;
     roles: string[];
+    hasReviewerAccess: boolean;
     sessionId: string;
+    activeTeam?: { id: string; name: string; status: string };
   };
 };
 
@@ -23,8 +27,7 @@ export class SessionGuard implements CanActivate {
       throw new UnauthorizedException("Authentication required");
     }
 
-    const session = await this.auth.validateSession(token);
-    request.user = session;
+    request.user = await this.auth.validateSession(token);
     return true;
   }
 }

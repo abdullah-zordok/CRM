@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { SecurityAuditOutcome } from "@prisma/client";
 
 describe("security audit", () => {
-  it("tracks required audit event types", () => {
-    expect(["LOGIN_SUCCESS", "LOGIN_FAILURE", "LOGOUT", "ACCESS_DENIED"]).toContain("LOGOUT");
+  it("tracks required audit event outcomes", () => {
+    expect(Object.values(SecurityAuditOutcome)).toEqual(
+      expect.arrayContaining(["SUCCESS", "FAILURE", "DENIED"]),
+    );
   });
 });

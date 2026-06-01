@@ -4,5 +4,7 @@ import { foundationSmokeEventName } from "../../src/infrastructure/events/event-
 describe("operational event", () => {
   it("uses a foundation-only smoke event name", () => {
     expect(foundationSmokeEventName).toBe("FoundationSmokeRequested");
+    expect(foundationSmokeEventName.toLowerCase()).not.toContain("lead");
+    expect(foundationSmokeEventName.toLowerCase()).not.toContain("deal");
   });
 });

@@ -9,6 +9,8 @@ pnpm-lock.yaml
 playwright-report/
 test-results/
 .agents/
+.codex-run/
+.opencode/
 .specify/
 SpacKit/
 specs/

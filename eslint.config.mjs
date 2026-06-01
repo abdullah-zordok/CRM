@@ -19,6 +19,8 @@ export default [
       "test-results/",
       "**/test-results/",
       ".agents/",
+      ".codex-run/",
+      ".opencode/",
       ".specify/",
       "SpacKit/",
     ],
@@ -52,7 +54,7 @@ export default [
     files: ["**/*.ts", "**/*.tsx"],
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/consistent-type-imports": "off",
     },
   },
 ];

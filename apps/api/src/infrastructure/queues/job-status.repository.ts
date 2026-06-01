@@ -1,47 +1,41 @@
-import { Injectable } from "@nestjs/common";
-import { BackgroundJobStatus } from "@prisma/client";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import type { BackgroundJobStatus } from "@prisma/client";
 import { PrismaService } from "../database/prisma.service.js";
 
 @Injectable()
 export class JobStatusRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  createQueued(input: {
-    operationalEventId: string;
+  create(input: {
+    operationalEventId?: string;
     queueName: string;
     jobType: string;
+    maxAttempts: number;
     idempotencyKey: string;
     correlationId: string;
-    maxAttempts: number;
   }) {
-    return this.prisma.backgroundJob.create({
+    return this.prisma.backgroundJob.upsert({
+      where: { idempotencyKey: input.idempotencyKey },
+      update: {},
+      create: input,
+    });
+  }
+
+  update(jobId: string, status: BackgroundJobStatus, extra: Record<string, unknown> = {}) {
+    return this.prisma.backgroundJob.update({
+      where: { id: jobId },
       data: {
-        operationalEventId: input.operationalEventId,
-        queueName: input.queueName,
-        jobType: input.jobType,
-        idempotencyKey: input.idempotencyKey,
-        correlationId: input.correlationId,
-        maxAttempts: input.maxAttempts,
-        status: BackgroundJobStatus.QUEUED,
+        status,
+        ...extra,
       },
     });
   }
 
-  findById(id: string) {
-    return this.prisma.backgroundJob.findUnique({ where: { id } });
-  }
-
-  markCompleted(id: string) {
-    return this.prisma.backgroundJob.update({
-      where: { id },
-      data: { status: BackgroundJobStatus.COMPLETED, completedAt: new Date() },
-    });
-  }
-
-  markFailed(id: string, error: string) {
-    return this.prisma.backgroundJob.update({
-      where: { id },
-      data: { status: BackgroundJobStatus.FAILED, lastError: error },
-    });
+  async get(jobId: string) {
+    const job = await this.prisma.backgroundJob.findUnique({ where: { id: jobId } });
+    if (!job) {
+      throw new NotFoundException("Job not found");
+    }
+    return job;
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import { PrismaService } from "../../../infrastructure/database/prisma.service.js";
 import { RedisService } from "../../../infrastructure/cache/redis.service.js";
+import { PrismaService } from "../../../infrastructure/database/prisma.service.js";
 
 type ServiceStatus = {
   name: "api" | "database" | "cache" | "queue";

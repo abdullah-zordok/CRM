@@ -1,22 +1,23 @@
+import type { LoggerService as NestLoggerService } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
-import { pino } from "pino";
 
 @Injectable()
-export class LoggerService {
-  private readonly logger = pino({
-    level: process.env.NODE_ENV === "test" ? "silent" : "info",
-    redact: ["password", "passwordHash", "sessionToken", "token", "authorization"],
-  });
-
-  info(message: string, meta: Record<string, unknown> = {}) {
-    this.logger.info(meta, message);
+export class StructuredLoggerService implements NestLoggerService {
+  log(message: string, context?: string): void {
+    console.log(JSON.stringify({ level: "info", message, context }));
   }
 
-  warn(message: string, meta: Record<string, unknown> = {}) {
-    this.logger.warn(meta, message);
+  error(message: string, trace?: string, context?: string): void {
+    console.error(JSON.stringify({ level: "error", message, context, trace }));
   }
 
-  error(message: string, meta: Record<string, unknown> = {}) {
-    this.logger.error(meta, message);
+  warn(message: string, context?: string): void {
+    console.warn(JSON.stringify({ level: "warn", message, context }));
+  }
+
+  debug(message: string, context?: string): void {
+    if (process.env.LOG_LEVEL === "debug") {
+      console.debug(JSON.stringify({ level: "debug", message, context }));
+    }
   }
 }
