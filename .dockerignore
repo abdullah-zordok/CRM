@@ -1,0 +1,16 @@
+node_modules/
+.git/
+.codex-run/
+.opencode/
+Dockerfile*
+.dockerignore
+*.log*
+.env
+.env.*
+coverage/
+.next/
+dist/
+build/
+playwright-report/
+test-results/
+

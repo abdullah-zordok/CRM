@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "001-foundation-architecture"
+      - "002-users-rbac"
+      - "003-leads-core"
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: crm
+          POSTGRES_PASSWORD: crm_local_password
+          POSTGRES_DB: crm_foundation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crm -d crm_foundation"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm ci:verify
+        env:
+          DATABASE_URL: postgresql://crm:crm_local_password@localhost:5432/crm_foundation
+          REDIS_URL: redis://localhost:6379
+          SESSION_SECRET: ci-session-secret-that-is-long-enough
+          SEEDED_ADMIN_EMAIL: admin@example.com
+          SEEDED_ADMIN_PASSWORD: ChangeThisPassword123!
+          WEB_ORIGIN: http://localhost:3000

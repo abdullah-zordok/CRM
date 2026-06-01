@@ -1,0 +1,769 @@
+openapi: 3.1.0
+info:
+  title: Users & RBAC API
+  version: 0.1.0
+  description: >
+    Phase 1 contract for platform user administration, fixed business roles,
+    team scoping, activation setup, session revocation, permission matrix
+    inspection, and searchable security audit review. No CRM business records
+    are exposed by this contract.
+servers:
+  - url: http://localhost:3001
+    description: Local API
+security:
+  - sessionCookie: []
+paths:
+  /users:
+    get:
+      summary: Search platform users
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Role"
+        - $ref: "#/components/parameters/UserStatus"
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: User search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create a platform user and activation path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created and activation issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /users/{userId}:
+    get:
+      summary: Get user detail
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update user profile or status
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /users/{userId}/activation:
+    post:
+      summary: Resend a time-limited activation path
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "202":
+          description: Activation path issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivationIssued"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /activation/complete:
+    post:
+      summary: Complete initial credential setup
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteActivationRequest"
+      responses:
+        "204":
+          description: Activation completed
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "410":
+          description: Activation expired or revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{userId}/roles:
+    put:
+      summary: Replace user business role assignments
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceRolesRequest"
+      responses:
+        "200":
+          description: Updated roles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /users/{userId}/reviewer-access:
+    put:
+      summary: Grant or remove read-only operations reviewer access
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewerAccessRequest"
+      responses:
+        "200":
+          description: Updated reviewer access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /permissions/matrix:
+    get:
+      summary: Get fixed Phase 1 permission matrix
+      responses:
+        "200":
+          description: Permission matrix
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionMatrix"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /teams:
+    get:
+      summary: List teams
+      responses:
+        "200":
+          description: Team list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create a team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeamRequest"
+      responses:
+        "201":
+          description: Team created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /teams/{teamId}:
+    patch:
+      summary: Update or deactivate a team
+      parameters:
+        - $ref: "#/components/parameters/TeamIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTeamRequest"
+      responses:
+        "200":
+          description: Updated team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /teams/{teamId}/members:
+    put:
+      summary: Replace active team membership
+      parameters:
+        - $ref: "#/components/parameters/TeamIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceTeamMembersRequest"
+      responses:
+        "200":
+          description: Updated team memberships
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /audit/security:
+    get:
+      summary: Search security audit records
+      parameters:
+        - name: actorUserId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: targetUserId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: eventType
+          in: query
+          schema:
+            type: string
+        - name: outcome
+          in: query
+          schema:
+            type: string
+            enum: [SUCCESS, FAILURE, DENIED]
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Security audit records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditSearchResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: crm_session
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TeamIdPath:
+      name: teamId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Search:
+      name: search
+      in: query
+      schema:
+        type: string
+        maxLength: 120
+    Role:
+      name: role
+      in: query
+      schema:
+        $ref: "#/components/schemas/BusinessRoleCode"
+    UserStatus:
+      name: status
+      in: query
+      schema:
+        $ref: "#/components/schemas/UserStatus"
+    TeamId:
+      name: teamId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Authentication required or session invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Authenticated user lacks required permission
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Request conflicts with uniqueness, lockout, or active-team rules
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    BusinessRoleCode:
+      type: string
+      enum: [ADMIN, MANAGER, SALES_REPRESENTATIVE]
+    UserStatus:
+      type: string
+      enum: [PENDING_ACTIVATION, ACTIVE, DISABLED]
+    UserSummary:
+      type: object
+      required: [id, email, displayName, status, roles, hasReviewerAccess, correlationId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessRoleCode"
+        hasReviewerAccess:
+          type: boolean
+        activeTeam:
+          $ref: "#/components/schemas/TeamSummary"
+        correlationId:
+          type: string
+    UserDetail:
+      allOf:
+        - $ref: "#/components/schemas/UserSummary"
+        - type: object
+          required: [createdAt, updatedAt]
+          properties:
+            activation:
+              $ref: "#/components/schemas/ActivationStatus"
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    UserListResponse:
+      type: object
+      required: [items, page, pageSize, total, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserSummary"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        correlationId:
+          type: string
+    CreateUserRequest:
+      type: object
+      required: [email, displayName, roles, status]
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        roles:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/BusinessRoleCode"
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        teamId:
+          type: string
+          format: uuid
+        reviewerAccess:
+          type: boolean
+          default: false
+    UpdateUserRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        status:
+          $ref: "#/components/schemas/UserStatus"
+    ActivationIssued:
+      type: object
+      required: [userId, expiresAt, correlationId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+    ActivationStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, USED, EXPIRED, REVOKED, NONE]
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+    CompleteActivationRequest:
+      type: object
+      required: [activationToken, password]
+      additionalProperties: false
+      properties:
+        activationToken:
+          type: string
+          minLength: 32
+        password:
+          type: string
+          minLength: 12
+          maxLength: 128
+    ReplaceRolesRequest:
+      type: object
+      required: [roles]
+      additionalProperties: false
+      properties:
+        roles:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/BusinessRoleCode"
+    ReviewerAccessRequest:
+      type: object
+      required: [enabled]
+      additionalProperties: false
+      properties:
+        enabled:
+          type: boolean
+    PermissionMatrix:
+      type: object
+      required: [roles, reviewerAccess, permissions, correlationId]
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessRoleCode"
+        reviewerAccess:
+          type: string
+          enum: [OPERATIONS_REVIEWER]
+        permissions:
+          type: array
+          items:
+            type: object
+            required: [code, resource, action, grantedTo]
+            properties:
+              code:
+                type: string
+              resource:
+                type: string
+              action:
+                type: string
+              grantedTo:
+                type: array
+                items:
+                  type: string
+        correlationId:
+          type: string
+    TeamSummary:
+      type: object
+      required: [id, name, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+    Team:
+      allOf:
+        - $ref: "#/components/schemas/TeamSummary"
+        - type: object
+          required: [members, createdAt, updatedAt, correlationId]
+          properties:
+            members:
+              type: array
+              items:
+                $ref: "#/components/schemas/TeamMember"
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            correlationId:
+              type: string
+    TeamMember:
+      type: object
+      required: [userId, displayName, membershipType]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        membershipType:
+          type: string
+          enum: [MEMBER, MANAGER]
+    TeamListResponse:
+      type: object
+      required: [items, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Team"
+        correlationId:
+          type: string
+    CreateTeamRequest:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+    UpdateTeamRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+    ReplaceTeamMembersRequest:
+      type: object
+      required: [members]
+      additionalProperties: false
+      properties:
+        members:
+          type: array
+          uniqueItems: true
+          items:
+            type: object
+            required: [userId, membershipType]
+            properties:
+              userId:
+                type: string
+                format: uuid
+              membershipType:
+                type: string
+                enum: [MEMBER, MANAGER]
+    AuditRecord:
+      type: object
+      required: [id, eventType, outcome, createdAt, correlationId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+        actorUserId:
+          type: string
+          format: uuid
+          nullable: true
+        targetUserId:
+          type: string
+          format: uuid
+          nullable: true
+        outcome:
+          type: string
+          enum: [SUCCESS, FAILURE, DENIED]
+        resource:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+    AuditSearchResponse:
+      type: object
+      required: [items, page, pageSize, total, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditRecord"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        correlationId:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [code, message, correlationId]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        correlationId:
+          type: string
