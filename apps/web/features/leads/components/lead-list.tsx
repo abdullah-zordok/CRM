@@ -22,13 +22,24 @@ export function LeadList() {
   }, []);
 
   return (
-    <section>
-      <h1>Leads</h1>
+    <section className="lead-page" aria-labelledby="leads-title">
+      <div className="lead-page__header">
+        <div>
+          <p className="eyebrow">Lead management</p>
+          <h1 id="leads-title">Leads</h1>
+        </div>
+      </div>
       <LeadForm />
       <LeadFilterBar onChange={load} />
-      {error ? <p role="alert">{error}</p> : null}
-      {leads.length === 0 ? <p>No leads match the current filters.</p> : null}
-      <ul>
+      {error ? (
+        <p className="status-message status-message--error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {leads.length === 0 ? (
+        <p className="empty-state">No leads match the current filters.</p>
+      ) : null}
+      <ul className="lead-list">
         {leads.map((lead) => (
           <li key={lead.id}>
             <a href={`/leads/${lead.id}`}>

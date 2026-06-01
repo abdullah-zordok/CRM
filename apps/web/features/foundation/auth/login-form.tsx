@@ -15,7 +15,7 @@ export function LoginForm() {
         email: String(formData.get("email")),
         password: String(formData.get("password")),
       });
-      router.push("/users");
+      router.push("/dashboard");
       router.refresh();
     } catch {
       setError("Invalid email or password.");

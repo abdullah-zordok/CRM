@@ -18,6 +18,8 @@ export default [
       "**/playwright-report/",
       "test-results/",
       "**/test-results/",
+      "*.min.js",
+      "**/*.min.js",
       ".agents/",
       ".codex-run/",
       ".opencode/",

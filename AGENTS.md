@@ -2,6 +2,6 @@
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read
-specs/003-leads-core/plan.md
+specs/002-crm-frontend/plan.md
 
 <!-- SPECKIT END -->
