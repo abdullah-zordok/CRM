@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FoundationUserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum RoleCategoryCode {
+  ADMIN
+  MANAGER
+  SALES_REPRESENTATIVE
+}
+
+enum AuthSessionStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum AccessDecisionValue {
+  ALLOW
+  DENY
+}
+
+enum SecurityAuditEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILURE
+  LOGOUT
+  ACCESS_DENIED
+  ACCESS_ALLOWED
+  CONFIG_ERROR
+  SYSTEM_STARTUP
+}
+
+enum SecurityAuditOutcome {
+  SUCCESS
+  FAILURE
+  DENIED
+}
+
+enum OperationalEventStatus {
+  RECORDED
+  DISPATCHED
+  HANDLED
+  FAILED
+}
+
+enum BackgroundJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  RETRYING
+}
+
+model FoundationUser {
+  id           String               @id @default(uuid()) @db.Uuid
+  email        String               @unique
+  displayName  String
+  passwordHash String
+  status       FoundationUserStatus @default(ACTIVE)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  roles        FoundationUserRole[]
+  sessions     AuthSession[]
+  audits       SecurityAuditRecord[]
+}
+
+model RoleCategory {
+  id          String                @id @default(uuid()) @db.Uuid
+  code        RoleCategoryCode      @unique
+  name        String
+  description String
+  createdAt   DateTime              @default(now())
+  users       FoundationUserRole[]
+}
+
+model FoundationUserRole {
+  userId     String         @db.Uuid
+  roleId     String         @db.Uuid
+  assignedAt DateTime       @default(now())
+  role       RoleCategory   @relation(fields: [roleId], references: [id])
+  user       FoundationUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model AuthSession {
+  id          String               @id @default(uuid()) @db.Uuid
+  userId      String               @db.Uuid
+  sessionHash String               @unique
+  status      AuthSessionStatus    @default(ACTIVE)
+  issuedAt    DateTime             @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  lastSeenAt  DateTime?
+  user        FoundationUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  audits      SecurityAuditRecord[]
+
+  @@index([userId, status])
+}
+
+model AccessDecision {
+  id            String              @id @default(uuid()) @db.Uuid
+  userId        String?             @db.Uuid
+  resource      String
+  action        String
+  decision      AccessDecisionValue
+  reason        String
+  correlationId String
+  decidedAt     DateTime            @default(now())
+
+  @@index([correlationId])
+}
+
+model SecurityAuditRecord {
+  id            String                 @id @default(uuid()) @db.Uuid
+  eventType     SecurityAuditEventType
+  actorUserId   String?                @db.Uuid
+  sessionId     String?                @db.Uuid
+  resource      String?
+  outcome       SecurityAuditOutcome
+  ipAddress     String?
+  userAgent     String?
+  correlationId String
+  metadata      Json                   @default("{}")
+  createdAt     DateTime               @default(now())
+  actor         FoundationUser?        @relation(fields: [actorUserId], references: [id])
+  session       AuthSession?           @relation(fields: [sessionId], references: [id])
+
+  @@index([correlationId])
+  @@index([createdAt])
+}
+
+model OperationalEvent {
+  id            String                 @id @default(uuid()) @db.Uuid
+  name          String
+  version       Int
+  payload       Json                   @default("{}")
+  correlationId String
+  status        OperationalEventStatus @default(RECORDED)
+  createdAt     DateTime               @default(now())
+  handledAt     DateTime?
+  jobs          BackgroundJob[]
+
+  @@index([correlationId])
+  @@index([status])
+}
+
+model BackgroundJob {
+  id             String              @id @default(uuid()) @db.Uuid
+  operationalEventId String?         @db.Uuid
+  queueName      String
+  jobType        String
+  status         BackgroundJobStatus @default(QUEUED)
+  attempts       Int                 @default(0)
+  maxAttempts    Int
+  idempotencyKey String              @unique
+  correlationId  String
+  lastError      String?
+  createdAt      DateTime            @default(now())
+  startedAt      DateTime?
+  completedAt    DateTime?
+  event          OperationalEvent?   @relation(fields: [operationalEventId], references: [id])
+
+  @@index([status])
+  @@index([correlationId])
+}
+
