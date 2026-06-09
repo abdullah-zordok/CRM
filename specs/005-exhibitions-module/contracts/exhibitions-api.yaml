@@ -1,0 +1,665 @@
+openapi: 3.1.0
+info:
+  title: Exhibitions Module API
+  version: 0.1.0
+  description:
+    Phase 4 Exhibitions Module contract for event management, attendance, lead attribution,
+    and scoped performance summaries.
+servers:
+  - url: http://localhost:3001
+    description: Local API
+security:
+  - sessionCookie: []
+paths:
+  /exhibitions:
+    get:
+      summary: Search exhibitions visible to the current user
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/ExhibitionStatus"
+        - $ref: "#/components/parameters/DateFrom"
+        - $ref: "#/components/parameters/DateTo"
+        - $ref: "#/components/parameters/Location"
+        - $ref: "#/components/parameters/OwnerUserId"
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/AttendeeUserId"
+        - $ref: "#/components/parameters/AttributionState"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Exhibition search results scoped to the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create an exhibition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExhibitionRequest"
+      responses:
+        "201":
+          description: Exhibition created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /exhibitions/{exhibitionId}:
+    get:
+      summary: Get exhibition detail
+      parameters:
+        - $ref: "#/components/parameters/ExhibitionId"
+      responses:
+        "200":
+          description: Exhibition detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update exhibition planning fields
+      parameters:
+        - $ref: "#/components/parameters/ExhibitionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExhibitionRequest"
+      responses:
+        "200":
+          description: Exhibition updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/StaleUpdate"
+  /exhibitions/{exhibitionId}/archive:
+    put:
+      summary: Archive an exhibition
+      parameters:
+        - $ref: "#/components/parameters/ExhibitionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArchiveExhibitionRequest"
+      responses:
+        "200":
+          description: Exhibition archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionDetail"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/StaleUpdate"
+  /exhibitions/{exhibitionId}/restore:
+    put:
+      summary: Restore an archived exhibition
+      parameters:
+        - $ref: "#/components/parameters/ExhibitionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RestoreExhibitionRequest"
+      responses:
+        "200":
+          description: Exhibition restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionDetail"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/StaleUpdate"
+  /exhibitions/{exhibitionId}/attendees:
+    post:
+      summary: Assign an exhibition attendee
+      parameters:
+        - $ref: "#/components/parameters/ExhibitionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignExhibitionAttendeeRequest"
+      responses:
+        "201":
+          description: Attendee assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionAttendee"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /exhibitions/{exhibitionId}/attendees/{attendeeId}/confirm:
+    put:
+      summary: Confirm or correct exhibition attendance
+      parameters:
+        - $ref: "#/components/parameters/ExhibitionId"
+        - $ref: "#/components/parameters/AttendeeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmAttendanceRequest"
+      responses:
+        "200":
+          description: Attendance confirmed or corrected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionAttendee"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/StaleUpdate"
+  /exhibitions/{exhibitionId}/lead-attributions:
+    post:
+      summary: Link a visible lead to an exhibition
+      parameters:
+        - $ref: "#/components/parameters/ExhibitionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttributeLeadRequest"
+      responses:
+        "201":
+          description: Lead attributed to exhibition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionLeadAttribution"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /exhibitions/{exhibitionId}/lead-attributions/{attributionId}:
+    patch:
+      summary: Correct or remove exhibition lead attribution
+      parameters:
+        - $ref: "#/components/parameters/ExhibitionId"
+        - $ref: "#/components/parameters/AttributionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrectAttributionRequest"
+      responses:
+        "200":
+          description: Attribution corrected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionLeadAttribution"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/StaleUpdate"
+  /exhibitions/{exhibitionId}/summary:
+    get:
+      summary: Get scoped exhibition performance summary
+      parameters:
+        - $ref: "#/components/parameters/ExhibitionId"
+      responses:
+        "200":
+          description: Exhibition performance summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExhibitionPerformanceSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: crm_session
+  responses:
+    ValidationError:
+      description: Request validation failed
+    Unauthorized:
+      description: Authentication required or session invalid
+    Forbidden:
+      description: Authenticated user lacks required permission
+    NotFound:
+      description: Resource not found or not visible to the authenticated user
+    Conflict:
+      description: Request conflicts with exhibition lifecycle, attendance, or attribution rules
+    StaleUpdate:
+      description: Record was changed by another user; reload before retrying
+  parameters:
+    ExhibitionId:
+      name: exhibitionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AttendeeId:
+      name: attendeeId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AttributionId:
+      name: attributionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Search:
+      name: search
+      in: query
+      schema:
+        type: string
+        maxLength: 120
+    ExhibitionStatus:
+      name: status
+      in: query
+      schema:
+        $ref: "#/components/schemas/ExhibitionStatus"
+    DateFrom:
+      name: from
+      in: query
+      schema:
+        type: string
+        format: date
+    DateTo:
+      name: to
+      in: query
+      schema:
+        type: string
+        format: date
+    Location:
+      name: location
+      in: query
+      schema:
+        type: string
+        maxLength: 120
+    OwnerUserId:
+      name: ownerUserId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    TeamId:
+      name: teamId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    AttendeeUserId:
+      name: attendeeUserId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    AttributionState:
+      name: attributionState
+      in: query
+      schema:
+        type: string
+        enum: [WITH_LEADS, WITHOUT_LEADS]
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+  schemas:
+    ExhibitionStatus:
+      type: string
+      enum: [PLANNED, ACTIVE, COMPLETED, CANCELED, ARCHIVED]
+    AttendeeStatus:
+      type: string
+      enum: [PLANNED, CONFIRMED, ABSENT, REMOVED, CORRECTED]
+    AttributionType:
+      type: string
+      enum: [SOURCE, INFLUENCE, CORRECTION]
+    AttributionStatus:
+      type: string
+      enum: [ACTIVE, REMOVED, CORRECTED]
+    CreateExhibitionRequest:
+      type: object
+      required: [name, startsAt, endsAt, location, status, ownerUserId]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        location:
+          type: string
+          minLength: 1
+          maxLength: 160
+        status:
+          $ref: "#/components/schemas/ExhibitionStatus"
+        ownerUserId:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+        notes:
+          type: string
+          maxLength: 4000
+    UpdateExhibitionRequest:
+      allOf:
+        - $ref: "#/components/schemas/CreateExhibitionRequest"
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              minimum: 1
+    ArchiveExhibitionRequest:
+      type: object
+      required: [version]
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+        version:
+          type: integer
+          minimum: 1
+    RestoreExhibitionRequest:
+      type: object
+      required: [version]
+      additionalProperties: false
+      properties:
+        restoredStatus:
+          $ref: "#/components/schemas/ExhibitionStatus"
+        version:
+          type: integer
+          minimum: 1
+    AssignExhibitionAttendeeRequest:
+      type: object
+      required: [userId]
+      additionalProperties: false
+      properties:
+        userId:
+          type: string
+          format: uuid
+        plannedRole:
+          type: string
+          maxLength: 120
+    ConfirmAttendanceRequest:
+      type: object
+      required: [status, version]
+      additionalProperties: false
+      properties:
+        status:
+          $ref: "#/components/schemas/AttendeeStatus"
+        correctionReason:
+          type: string
+          maxLength: 500
+        version:
+          type: integer
+          minimum: 1
+    AttributeLeadRequest:
+      type: object
+      required: [leadId, attributionType]
+      additionalProperties: false
+      properties:
+        leadId:
+          type: string
+          format: uuid
+        attributionType:
+          $ref: "#/components/schemas/AttributionType"
+        preserveReference:
+          type: boolean
+          default: true
+    CorrectAttributionRequest:
+      type: object
+      required: [status, version]
+      additionalProperties: false
+      properties:
+        status:
+          $ref: "#/components/schemas/AttributionStatus"
+        correctionReason:
+          type: string
+          maxLength: 500
+        version:
+          type: integer
+          minimum: 1
+    ExhibitionSummary:
+      type: object
+      required: [id, name, status, startsAt, endsAt, location, ownerUserId, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ExhibitionStatus"
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        location:
+          type: string
+        ownerUserId:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+        attendeeCount:
+          type: integer
+        attributedLeadCount:
+          type: integer
+        overdueFollowUpCount:
+          type: integer
+        version:
+          type: integer
+    ExhibitionDetail:
+      allOf:
+        - $ref: "#/components/schemas/ExhibitionSummary"
+        - type: object
+          required: [attendees, attributions, summary, correlationId]
+          properties:
+            notes:
+              type: string
+              nullable: true
+            attendees:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExhibitionAttendee"
+            attributions:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExhibitionLeadAttribution"
+            summary:
+              $ref: "#/components/schemas/ExhibitionPerformanceSummary"
+            correlationId:
+              type: string
+    ExhibitionAttendee:
+      type: object
+      required: [id, exhibitionId, userId, status, version, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        exhibitionId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+        plannedRole:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/AttendeeStatus"
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+    ExhibitionLeadAttribution:
+      type: object
+      required: [id, exhibitionId, leadId, attributionType, status, version, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        exhibitionId:
+          type: string
+          format: uuid
+        leadId:
+          type: string
+          format: uuid
+        leadDisplayName:
+          type: string
+        attributionType:
+          $ref: "#/components/schemas/AttributionType"
+        status:
+          $ref: "#/components/schemas/AttributionStatus"
+        sourceReferenceName:
+          type: string
+          nullable: true
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+    ExhibitionPerformanceSummary:
+      type: object
+      required:
+        - exhibitionId
+        - attributedLeadCount
+        - attendeeCount
+        - confirmedAttendanceCount
+        - openFollowUpCount
+        - overdueFollowUpCount
+        - recentActivityCount
+        - generatedAt
+      properties:
+        exhibitionId:
+          type: string
+          format: uuid
+        attributedLeadCount:
+          type: integer
+        leadStatusDistribution:
+          type: object
+          additionalProperties:
+            type: integer
+        attendeeCount:
+          type: integer
+        confirmedAttendanceCount:
+          type: integer
+        openFollowUpCount:
+          type: integer
+        overdueFollowUpCount:
+          type: integer
+        recentActivityCount:
+          type: integer
+        lastActivityAt:
+          type: string
+          format: date-time
+          nullable: true
+        generatedAt:
+          type: string
+          format: date-time
+    ExhibitionListResponse:
+      type: object
+      required: [items, total, page, pageSize, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExhibitionSummary"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        correlationId:
+          type: string

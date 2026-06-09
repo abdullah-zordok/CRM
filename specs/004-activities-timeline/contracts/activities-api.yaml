@@ -1,0 +1,442 @@
+openapi: 3.1.0
+info:
+  title: Activities Timeline API Contract
+  version: 0.1.0
+  description: Phase 3 contract for lead activities and follow-ups.
+servers:
+  - url: http://localhost:3001
+security:
+  - sessionCookie: []
+paths:
+  /activities:
+    get:
+      summary: Search activities and follow-ups visible to the current user
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/OwnerUserId"
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/ActivityType"
+        - $ref: "#/components/parameters/ActivityStatus"
+        - $ref: "#/components/parameters/DueState"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Activity search results scoped to the current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create a completed activity or planned follow-up for an accessible lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateActivityRequest"
+      responses:
+        "201":
+          description: Activity created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /leads/{leadId}/activities:
+    get:
+      summary: Get the activity timeline for an accessible lead
+      parameters:
+        - name: leadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Lead activity timeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityTimelineResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /activities/{activityId}/complete:
+    put:
+      summary: Complete an open follow-up
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteActivityRequest"
+      responses:
+        "200":
+          description: Follow-up completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /activities/{activityId}/reassign:
+    put:
+      summary: Reassign an open follow-up to an eligible owner
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReassignActivityRequest"
+      responses:
+        "200":
+          description: Follow-up reassigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /activities/{activityId}/cancel:
+    put:
+      summary: Cancel an open planned activity
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelActivityRequest"
+      responses:
+        "200":
+          description: Activity canceled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: crm_session
+  parameters:
+    ActivityId:
+      name: activityId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LeadId:
+      name: leadId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    OwnerUserId:
+      name: ownerUserId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    TeamId:
+      name: teamId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    ActivityType:
+      name: type
+      in: query
+      schema:
+        $ref: "#/components/schemas/ActivityType"
+    ActivityStatus:
+      name: status
+      in: query
+      schema:
+        $ref: "#/components/schemas/ActivityStatus"
+    DueState:
+      name: dueState
+      in: query
+      schema:
+        $ref: "#/components/schemas/DueState"
+    From:
+      name: from
+      in: query
+      schema:
+        type: string
+        format: date-time
+    To:
+      name: to
+      in: query
+      schema:
+        type: string
+        format: date-time
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+  schemas:
+    ActivityType:
+      type: string
+      enum: [CALL, EMAIL, MEETING, EXHIBITION_VISIT, WHATSAPP, OTHER]
+    ActivityStatus:
+      type: string
+      enum: [PLANNED, DUE_TODAY, OVERDUE, COMPLETED, CANCELED]
+    DueState:
+      type: string
+      enum: [OPEN, DUE_TODAY, OVERDUE, COMPLETED, CANCELED]
+    ActivityOutcome:
+      type: string
+      enum: [CONNECTED, NO_ANSWER, QUALIFIED_INTEREST, FOLLOW_UP_REQUIRED, NOT_INTERESTED, OTHER]
+    CreateActivityRequest:
+      type: object
+      additionalProperties: false
+      required: [leadId, type, ownerUserId]
+      properties:
+        leadId:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/ActivityType"
+        ownerUserId:
+          type: string
+          format: uuid
+        activityAt:
+          type: string
+          format: date-time
+        dueAt:
+          type: string
+          format: date-time
+        outcome:
+          $ref: "#/components/schemas/ActivityOutcome"
+        note:
+          type: string
+          minLength: 1
+          maxLength: 4000
+      oneOf:
+        - required: [activityAt, outcome]
+        - required: [dueAt]
+    CompleteActivityRequest:
+      type: object
+      additionalProperties: false
+      required: [version, outcome, completedAt]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        outcome:
+          $ref: "#/components/schemas/ActivityOutcome"
+        completedAt:
+          type: string
+          format: date-time
+        note:
+          type: string
+          minLength: 1
+          maxLength: 4000
+    ReassignActivityRequest:
+      type: object
+      additionalProperties: false
+      required: [version, ownerUserId]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        ownerUserId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          maxLength: 500
+    CancelActivityRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
+          maxLength: 500
+    ActivitySummary:
+      type: object
+      required:
+        - id
+        - leadId
+        - leadDisplayName
+        - type
+        - status
+        - ownerUserId
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        leadId:
+          type: string
+          format: uuid
+        leadDisplayName:
+          type: string
+        type:
+          $ref: "#/components/schemas/ActivityType"
+        status:
+          $ref: "#/components/schemas/ActivityStatus"
+        ownerUserId:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+        activityAt:
+          type: string
+          format: date-time
+          nullable: true
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+        outcome:
+          $ref: "#/components/schemas/ActivityOutcome"
+        notePreview:
+          type: string
+          nullable: true
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ActivityDetail:
+      allOf:
+        - $ref: "#/components/schemas/ActivitySummary"
+        - type: object
+          properties:
+            note:
+              type: string
+              nullable: true
+            permissions:
+              type: object
+              required: [canComplete, canReassign, canCancel, canCorrect]
+              properties:
+                canComplete:
+                  type: boolean
+                canReassign:
+                  type: boolean
+                canCancel:
+                  type: boolean
+                canCorrect:
+                  type: boolean
+    ActivityListResponse:
+      type: object
+      required: [items, total, page, pageSize, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivitySummary"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        correlationId:
+          type: string
+    ActivityTimelineResponse:
+      type: object
+      required: [items, total, page, pageSize, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityDetail"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        correlationId:
+          type: string
+  responses:
+    Unauthorized:
+      description: Authentication required
+    Forbidden:
+      description: Insufficient permission or scope
+    NotFound:
+      description: Resource not found or not visible to the current user
+    Conflict:
+      description: Stale version, duplicate, archived lead, or invalid state transition
+    ValidationError:
+      description: Request validation failed
