@@ -1,0 +1,562 @@
+openapi: 3.1.0
+info:
+  title: User and Lead Recovery API
+  version: 0.1.0
+  description: >
+    Contract deltas for immediate Admin-created user login, safe user deletion,
+    Sales Representative self-owned lead creation, scoped lead visibility, and
+    operational dashboard accountability metrics.
+servers:
+  - url: http://localhost:3001
+    description: Local API
+security:
+  - sessionCookie: []
+paths:
+  /auth/login:
+    post:
+      summary: Sign in with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login succeeded for an active non-deleted user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /users:
+    post:
+      summary: Create an active login-ready user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLoginReadyUserRequest"
+      responses:
+        "201":
+          description: Active user created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /users/{userId}:
+    patch:
+      summary: Update user profile or active status
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserLifecycleRequest"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      summary: Soft delete a user
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "204":
+          description: User deleted from active operations
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/UserLifecycleConflict"
+  /leads:
+    get:
+      summary: Search visible leads using role, ownership, and team scope
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - name: ownerUserId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: teamId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: source
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lead search results scoped to the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create a lead owned by the current Sales Representative when no owner is supplied
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeadRecoveryRequest"
+      responses:
+        "201":
+          description: Lead created with owner and creator attribution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /dashboard/operations:
+    get:
+      summary: Get scoped operational accountability metrics
+      responses:
+        "200":
+          description: Admin global or Manager team-scoped operational metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationalDashboardResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: crm_session
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Authentication required or credentials invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Authenticated user lacks required permission or account access
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found or not visible to the authenticated user
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Request conflicts with uniqueness, lifecycle, ownership, or scope rules
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    UserLifecycleConflict:
+      description: User deletion or disablement blocked by self-action or last-admin safety rules
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UserLifecycleConflictError"
+  schemas:
+    BusinessRoleCode:
+      type: string
+      enum: [ADMIN, MANAGER, SALES_REPRESENTATIVE]
+    UserStatus:
+      type: string
+      enum: [ACTIVE, DISABLED]
+    LoginRequest:
+      type: object
+      required: [email, password]
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+    SessionResponse:
+      type: object
+      required: [user, permissions, correlationId]
+      additionalProperties: false
+      properties:
+        user:
+          $ref: "#/components/schemas/UserSummary"
+        permissions:
+          type: array
+          items:
+            type: string
+        correlationId:
+          type: string
+    CreateLoginReadyUserRequest:
+      type: object
+      required: [email, displayName, password, roles]
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        roles:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/BusinessRoleCode"
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+    UpdateUserLifecycleRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        status:
+          $ref: "#/components/schemas/UserStatus"
+    UserSummary:
+      type: object
+      required: [id, email, displayName, status, roles, isDeleted]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessRoleCode"
+        isDeleted:
+          type: boolean
+    UserDetail:
+      allOf:
+        - $ref: "#/components/schemas/UserSummary"
+        - type: object
+          required: [createdAt, updatedAt, correlationId]
+          properties:
+            activeTeam:
+              $ref: "#/components/schemas/TeamSummary"
+            deletedAt:
+              type: string
+              format: date-time
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            correlationId:
+              type: string
+    TeamSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    CreateLeadRecoveryRequest:
+      type: object
+      required: [name, source, status, priority]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        email:
+          type: string
+          format: email
+          maxLength: 320
+          nullable: true
+        phone:
+          type: string
+          maxLength: 40
+          nullable: true
+        company:
+          type: string
+          maxLength: 160
+          nullable: true
+        ownerId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Optional for Admin/Manager assignment flows; ignored for Sales Representative self-owned creation unless explicitly permitted.
+        source:
+          type: string
+          maxLength: 80
+        status:
+          type: string
+        priority:
+          type: string
+    LeadSummary:
+      type: object
+      required: [id, name, ownerId, createdById, source, status, priority, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        company:
+          type: string
+          nullable: true
+        ownerId:
+          type: string
+          format: uuid
+        ownerDisplayName:
+          type: string
+          nullable: true
+        ownerIsDeleted:
+          type: boolean
+        createdById:
+          type: string
+          format: uuid
+        createdByDisplayName:
+          type: string
+          nullable: true
+        source:
+          type: string
+        status:
+          type: string
+        priority:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    LeadDetail:
+      allOf:
+        - $ref: "#/components/schemas/LeadSummary"
+        - type: object
+          required: [permissions, correlationId]
+          properties:
+            permissions:
+              type: object
+              required: [canView, canUpdate, canAddNote, canAddFollowUp]
+              additionalProperties: false
+              properties:
+                canView:
+                  type: boolean
+                canUpdate:
+                  type: boolean
+                canAddNote:
+                  type: boolean
+                canAddFollowUp:
+                  type: boolean
+            correlationId:
+              type: string
+    LeadListResponse:
+      type: object
+      required: [items, page, pageSize, total, correlationId]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeadSummary"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        correlationId:
+          type: string
+    OperationalDashboardResponse:
+      type: object
+      required: [scope, totalLeads, leadsByRepresentative, leadsByTeam, leadsBySource, representatives, generatedAt, correlationId]
+      properties:
+        scope:
+          type: string
+          enum: [ADMIN_GLOBAL, MANAGER_TEAM]
+        totalLeads:
+          type: integer
+          minimum: 0
+        leadsByRepresentative:
+          type: array
+          items:
+            $ref: "#/components/schemas/MetricBucket"
+        leadsByTeam:
+          type: array
+          items:
+            $ref: "#/components/schemas/MetricBucket"
+        leadsBySource:
+          type: array
+          items:
+            $ref: "#/components/schemas/MetricBucket"
+        representatives:
+          type: array
+          items:
+            $ref: "#/components/schemas/RepresentativeMetric"
+        generatedAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+    MetricBucket:
+      type: object
+      required: [id, label, count]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        count:
+          type: integer
+          minimum: 0
+    RepresentativeMetric:
+      type: object
+      required: [userId, name, email, role, leadCount, activityCount, followUpCount]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/BusinessRoleCode"
+        leadCount:
+          type: integer
+          minimum: 0
+        activityCount:
+          type: integer
+          minimum: 0
+        followUpCount:
+          type: integer
+          minimum: 0
+        lastActivity:
+          type: string
+          format: date-time
+          nullable: true
+    UserLifecycleConflictError:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [reason]
+          properties:
+            reason:
+              type: string
+              enum: [SELF_ACTION_BLOCKED, LAST_ACTIVE_ADMIN_BLOCKED, HISTORICAL_REFERENCE_CONFLICT]
+    ErrorResponse:
+      type: object
+      required: [code, message, correlationId]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        correlationId:
+          type: string

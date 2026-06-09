@@ -21,7 +21,7 @@
     "verify:foundation": "tsx packages/test-utils/src/verify-foundation.ts",
     "verify:users-rbac": "tsx packages/test-utils/src/verify-users-rbac.ts",
     "verify:leads-core": "tsx packages/test-utils/src/verify-leads-core.ts",
-    "ci:verify": "tsx packages/test-utils/src/ci-verify.ts"
+    "ci:verify": "node packages/test-utils/src/ci-verify.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.28.0",
