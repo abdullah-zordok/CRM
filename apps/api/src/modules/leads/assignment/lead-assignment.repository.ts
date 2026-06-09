@@ -4,6 +4,12 @@ import { PrismaService } from "../../../infrastructure/database/prisma.service.j
 import type { LeadRecord } from "../leads.repository.js";
 
 const includeLeadDetail = {
+  owner: {
+    select: { displayName: true },
+  },
+  creator: {
+    select: { displayName: true },
+  },
   exhibitionReference: true,
   assignments: {
     orderBy: { createdAt: "desc" },

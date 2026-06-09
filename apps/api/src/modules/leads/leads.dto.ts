@@ -10,6 +10,8 @@ import type {
 import { redactMetadata } from "../users/users.dto.js";
 
 type LeadWithReference = Lead & {
+  owner?: { displayName: string } | null;
+  creator?: { displayName: string } | null;
   exhibitionReference?: LeadExhibitionReference | null;
   assignments?: LeadAssignment[];
   statusHistory?: LeadStatusHistory[];
@@ -47,8 +49,10 @@ export function toLeadSummaryDto(lead: LeadWithReference, correlationId = "local
     budgetAmount: lead.budgetAmount ? Number(lead.budgetAmount) : null,
     budgetCurrency: lead.budgetCurrency,
     ownerUserId: lead.ownerUserId,
+    ownerDisplayName: lead.owner?.displayName ?? null,
     teamId: lead.teamId,
     createdByUserId: lead.createdByUserId,
+    createdByDisplayName: lead.creator?.displayName ?? null,
     exhibitionReference: lead.exhibitionReference
       ? {
           name: lead.exhibitionReference.name,

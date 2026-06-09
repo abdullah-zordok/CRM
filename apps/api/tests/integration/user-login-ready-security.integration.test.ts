@@ -51,8 +51,9 @@ describe("login-ready user security paths", () => {
   });
 
   it("redacts raw credential metadata and uses a generic unauthorized denial type", () => {
-    expect(redactMetadata({ password: "LongEnough123", tokenHash: "secret", status: "ACTIVE" }))
-      .toEqual({ password: "[REDACTED]", tokenHash: "[REDACTED]", status: "ACTIVE" });
+    expect(
+      redactMetadata({ password: "LongEnough123", tokenHash: "secret", status: "ACTIVE" }),
+    ).toEqual({ password: "[REDACTED]", tokenHash: "[REDACTED]", status: "ACTIVE" });
 
     const denial = new UnauthorizedException("Invalid credentials");
     expect(denial.message).toBe("Invalid credentials");

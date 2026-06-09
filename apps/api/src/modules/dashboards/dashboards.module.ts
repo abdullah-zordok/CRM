@@ -10,11 +10,6 @@ import { OperationsDashboardService } from "./operations-dashboard.service.js";
 @Module({
   imports: [AuthModule, UsersModule],
   controllers: [OperationsDashboardController],
-  providers: [
-    OperationsDashboardRepository,
-    OperationsDashboardService,
-    SessionGuard,
-    RoleGuard,
-  ],
+  providers: [OperationsDashboardRepository, OperationsDashboardService, SessionGuard, RoleGuard],
 })
 export class DashboardsModule {}

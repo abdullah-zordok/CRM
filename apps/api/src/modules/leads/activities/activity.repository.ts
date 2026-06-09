@@ -219,7 +219,11 @@ export class ActivityRepository {
                 : "FOLLOW_UP_STATUS_CHANGED",
           actorUserId,
           summary: "Follow-up status changed",
-          metadata: { activityId: activity.id, fromStatus: activity.status, toStatus: input.status },
+          metadata: {
+            activityId: activity.id,
+            fromStatus: activity.status,
+            toStatus: input.status,
+          },
           correlationId,
         },
       });

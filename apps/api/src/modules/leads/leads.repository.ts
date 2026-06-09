@@ -6,9 +6,16 @@ import {
   normalizePhone,
   type CreateLeadInput,
   type LeadSearchInput,
+  type UpdateLeadInput,
 } from "./leads.schemas.js";
 
 const includeLeadDetail = {
+  owner: {
+    select: { displayName: true },
+  },
+  creator: {
+    select: { displayName: true },
+  },
   exhibitionReference: true,
   assignments: {
     orderBy: { createdAt: "desc" },
@@ -149,6 +156,88 @@ export class LeadRepository {
       }
 
       return lead;
+    });
+  }
+
+  async update(input: {
+    lead: LeadRecord;
+    data: UpdateLeadInput;
+    correlationId: string;
+  }): Promise<LeadRecord | null> {
+    const normalizedEmail =
+      input.data.email !== undefined ? normalizeEmail(input.data.email) : undefined;
+    const normalizedPhone =
+      input.data.phone !== undefined ? normalizePhone(input.data.phone) : undefined;
+
+    return this.prisma.$transaction(async (tx) => {
+      const result = await tx.lead.updateMany({
+        where: { id: input.lead.id, version: input.data.version },
+        data: {
+          displayName: input.data.displayName,
+          company: input.data.company,
+          email: input.data.email,
+          normalizedEmail,
+          phone: input.data.phone,
+          normalizedPhone,
+          sourceCode: input.data.sourceCode,
+          priority: input.data.priority,
+          budgetAmount: input.data.budgetAmount,
+          budgetCurrency: input.data.budgetCurrency,
+        },
+      });
+      if (result.count !== 1) return null;
+
+      const contactChanged =
+        (input.data.displayName !== undefined &&
+          input.data.displayName !== input.lead.displayName) ||
+        (input.data.company !== undefined && input.data.company !== input.lead.company) ||
+        (input.data.email !== undefined && input.data.email !== input.lead.email) ||
+        (input.data.phone !== undefined && input.data.phone !== input.lead.phone) ||
+        (input.data.priority !== undefined && input.data.priority !== input.lead.priority) ||
+        (input.data.budgetAmount !== undefined &&
+          Number(input.data.budgetAmount) !== Number(input.lead.budgetAmount ?? 0)) ||
+        (input.data.budgetCurrency !== undefined &&
+          input.data.budgetCurrency !== input.lead.budgetCurrency);
+
+      if (contactChanged) {
+        await tx.leadHistoryEntry.create({
+          data: {
+            leadId: input.lead.id,
+            entryType: "CONTACT_UPDATED",
+            summary: "Lead information updated",
+            metadata: {
+              displayName: input.data.displayName,
+              company: input.data.company,
+              email: input.data.email,
+              phone: input.data.phone,
+              priority: input.data.priority,
+              budgetAmount: input.data.budgetAmount,
+              budgetCurrency: input.data.budgetCurrency,
+            },
+            correlationId: input.correlationId,
+          },
+        });
+      }
+
+      if (input.data.sourceCode !== undefined && input.data.sourceCode !== input.lead.sourceCode) {
+        await tx.leadHistoryEntry.create({
+          data: {
+            leadId: input.lead.id,
+            entryType: "SOURCE_CHANGED",
+            summary: "Lead source changed",
+            metadata: {
+              fromSourceCode: input.lead.sourceCode,
+              toSourceCode: input.data.sourceCode,
+            },
+            correlationId: input.correlationId,
+          },
+        });
+      }
+
+      return tx.lead.findUnique({
+        where: { id: input.lead.id },
+        include: includeLeadDetail,
+      });
     });
   }
 

@@ -35,12 +35,7 @@ export type ActivityStatus =
   | "COMPLETED"
   | "CANCELED";
 export type ActivityKind = "ACTIVITY" | "FOLLOW_UP";
-export type FollowUpStatus =
-  | "PENDING"
-  | "IN_PROGRESS"
-  | "COMPLETED"
-  | "CANCELLED"
-  | "OVERDUE";
+export type FollowUpStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "OVERDUE";
 export type ActivityOutcome =
   | "CONNECTED"
   | "NO_ANSWER"

@@ -12,7 +12,7 @@ const commands = [
   ["test:contract"],
   ["test:integration"],
   ["verify:users-rbac"],
-] as const;
+];
 
 for (const args of commands) {
   const result =

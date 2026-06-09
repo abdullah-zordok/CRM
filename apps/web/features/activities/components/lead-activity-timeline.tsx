@@ -116,7 +116,9 @@ export function LeadActivityTimeline({
                       <span className="status-pill">{activity.type}</span>
                     </td>
                     <td>{activity.outcome ?? "Not recorded"}</td>
-                    <td>{activity.recordedByDisplayName ?? activity.recordedByUserId ?? "Unknown"}</td>
+                    <td>
+                      {activity.recordedByDisplayName ?? activity.recordedByUserId ?? "Unknown"}
+                    </td>
                     <td>{activity.ownerDisplayName ?? activity.ownerUserId}</td>
                     <td>{formatWhen(activity.activityAt ?? activity.completedAt)}</td>
                     <td className="activity-table__notes">{activity.note ?? "No notes"}</td>
@@ -190,7 +192,9 @@ export function LeadActivityTimeline({
                           />
                         </div>
                       </td>
-                      <td className="activity-table__notes">{activity.note ?? "No preparation notes"}</td>
+                      <td className="activity-table__notes">
+                        {activity.note ?? "No preparation notes"}
+                      </td>
                       <td>{formatWhen(activity.createdAt)}</td>
                     </tr>
                   );

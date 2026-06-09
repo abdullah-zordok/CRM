@@ -1,11 +1,16 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  PreconditionFailedException,
+} from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
 import type { AuthenticatedRequest } from "../../common/guards/session.guard.js";
 import { UsersRepository } from "../users/users.repository.js";
-import { toLeadDetailDto, toLeadSourceDto, toLeadSummaryDto } from "./leads.dto.js";
+import { LeadErrorCode, toLeadDetailDto, toLeadSourceDto, toLeadSummaryDto } from "./leads.dto.js";
 import { LeadDuplicateService } from "./leads-duplicate.service.js";
 import { LeadRepository } from "./leads.repository.js";
-import type { CreateLeadInput, LeadSearchInput } from "./leads.schemas.js";
+import type { CreateLeadInput, LeadSearchInput, UpdateLeadInput } from "./leads.schemas.js";
 import { LeadAuditService } from "./audit/lead-audit.service.js";
 import { LeadEventService } from "./events/lead-event.service.js";
 import { LeadAccessService } from "./permissions/lead-access.service.js";
@@ -90,6 +95,56 @@ export class LeadService {
       total: result.total,
       correlationId,
     };
+  }
+
+  async update(leadId: string, input: UpdateLeadInput, user: LeadUser, correlationId = "local") {
+    if (!user) throw new ForbiddenException("Permission denied");
+    const lead = await this.repository.findById(leadId);
+    if (!lead) throw new NotFoundException("Lead not found");
+    const decision = await this.access.decide({ user, lead, action: "UPDATE", correlationId });
+    if (!decision.allowed) throw new ForbiddenException("Permission denied");
+
+    const updated = await this.repository.update({ lead, data: input, correlationId });
+    if (!updated) {
+      await this.audit.record({
+        eventType: "LEAD_STALE_UPDATE_REJECTED",
+        outcome: "DENIED",
+        actorUserId: user.id,
+        leadId,
+        correlationId,
+        metadata: { expectedVersion: input.version },
+      });
+      throw new PreconditionFailedException({
+        code: LeadErrorCode.StaleUpdate,
+        message: "Lead has changed. Reload and try again.",
+      });
+    }
+
+    const sourceChanged = input.sourceCode !== undefined && input.sourceCode !== lead.sourceCode;
+    await this.audit.record({
+      eventType: "LEAD_UPDATED",
+      actorUserId: user.id,
+      leadId: lead.id,
+      correlationId,
+      metadata: {
+        fields: Object.keys(input).filter((key) => key !== "version"),
+      },
+    });
+    if (sourceChanged) {
+      await this.events.record({
+        name: "LeadSourceChanged",
+        leadId: lead.id,
+        payload: {
+          leadId: lead.id,
+          fromSourceCode: lead.sourceCode,
+          toSourceCode: input.sourceCode,
+        },
+        idempotencyKey: `lead-source:${lead.id}:${updated.version}`,
+        correlationId,
+      });
+    }
+
+    return toLeadDetailDto(updated, correlationId);
   }
 
   private scopeForUser(user: NonNullable<LeadUser>): Prisma.LeadWhereInput {
