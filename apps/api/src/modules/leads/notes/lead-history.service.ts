@@ -17,10 +17,12 @@ export class LeadHistoryService {
 
   async list(
     leadId: string,
-    query: { page: number; pageSize: number },
+    query: { page?: number; pageSize?: number },
     user: LeadUser,
     correlationId = "local",
   ) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 25;
     const lead = await this.leads.findById(leadId);
     if (!lead) throw new NotFoundException("Lead not found");
     const decision = await this.access.decide({
@@ -31,10 +33,10 @@ export class LeadHistoryService {
     });
     if (!decision.allowed) throw new ForbiddenException("Permission denied");
 
-    const result = await this.history.list({ leadId, page: query.page, pageSize: query.pageSize });
+    const result = await this.history.list({ leadId, page, pageSize });
     return toLeadHistoryResponse(result.items, {
-      page: query.page,
-      pageSize: query.pageSize,
+      page,
+      pageSize,
       total: result.total,
       correlationId,
     });
