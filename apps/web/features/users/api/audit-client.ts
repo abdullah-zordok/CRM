@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3501";
+import { getBrowserApiBaseUrl } from "../../foundation/api/api-base-url";
+
+const API_BASE_URL = getBrowserApiBaseUrl();
 
 export function searchAudit(query = "") {
   return fetch(`${API_BASE_URL}/audit/security${query}`, {

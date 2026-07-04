@@ -2,12 +2,12 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Bell, Building2, UserCircle } from "lucide-react";
+import { getServerApiBaseUrl } from "../../features/foundation/api/api-base-url";
 import { LogoutButton } from "../../features/foundation/auth/logout-button";
 import { AccessibilityFrame } from "../../features/workspace/components/accessibility-frame";
 import { WorkspaceNavigation } from "../../features/workspace/components/workspace-navigation";
 
-const API_BASE_URL =
-  process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3501";
+const API_BASE_URL = getServerApiBaseUrl();
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();

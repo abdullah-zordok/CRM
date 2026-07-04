@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3501";
+import { getBrowserApiBaseUrl } from "../api/api-base-url";
+
+const API_BASE_URL = getBrowserApiBaseUrl();
 
 export interface CurrentUser {
   id: string;

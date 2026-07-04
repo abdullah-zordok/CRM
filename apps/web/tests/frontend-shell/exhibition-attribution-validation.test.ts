@@ -30,7 +30,7 @@ describe("exhibition attribution client", () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      "http://localhost:3501/exhibitions/exhibition-1/lead-attributions",
+      "/api/exhibitions/exhibition-1/lead-attributions",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
@@ -42,7 +42,7 @@ describe("exhibition attribution client", () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      "http://localhost:3501/exhibitions/exhibition-1/lead-attributions/attribution-1",
+      "/api/exhibitions/exhibition-1/lead-attributions/attribution-1",
       expect.objectContaining({
         method: "PATCH",
         body: JSON.stringify({

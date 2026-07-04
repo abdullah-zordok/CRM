@@ -21,6 +21,8 @@ export class SmokeJobProcessor implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
+    if (process.env.VERCEL) return;
+
     this.worker = new Worker<SmokeJobData>(foundationSmokeQueueName, (job) => this.process(job), {
       connection: this.redis.createQueueConnection(),
     });

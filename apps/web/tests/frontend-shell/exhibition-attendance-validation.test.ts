@@ -22,7 +22,7 @@ describe("exhibition attendance client", () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      "http://localhost:3501/exhibitions/exhibition-1/attendees",
+      "/api/exhibitions/exhibition-1/attendees",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ userId: "user-1", plannedRole: "Presenter" }),
@@ -30,7 +30,7 @@ describe("exhibition attendance client", () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      "http://localhost:3501/exhibitions/exhibition-1/attendees/attendee-1/confirm",
+      "/api/exhibitions/exhibition-1/attendees/attendee-1/confirm",
       expect.objectContaining({
         method: "PUT",
         body: JSON.stringify({ status: "CONFIRMED", version: 2 }),

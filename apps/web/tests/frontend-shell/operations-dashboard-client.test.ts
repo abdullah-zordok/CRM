@@ -27,7 +27,7 @@ describe("getOperationsDashboard", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3501/dashboard/operations?search=ahmed&status=NEW&page=2&pageSize=10",
+      "/api/dashboard/operations?search=ahmed&status=NEW&page=2&pageSize=10",
       expect.objectContaining({ credentials: "include" }),
     );
   });

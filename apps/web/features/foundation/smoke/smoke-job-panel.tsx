@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { getBrowserApiBaseUrl } from "../api/api-base-url";
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3501";
+const apiBaseUrl = getBrowserApiBaseUrl();
 
 type SmokeJob = {
   jobId: string;
