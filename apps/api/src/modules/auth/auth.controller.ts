@@ -27,6 +27,17 @@ const loginSchema = z.object({
 
 type LoginInput = z.infer<typeof loginSchema>;
 
+export function sessionCookieOptions() {
+  const production = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    sameSite: production ? ("none" as const) : ("lax" as const),
+    secure: production,
+    path: "/",
+    maxAge: 60 * 60 * 8,
+  };
+}
+
 @Controller("auth")
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
@@ -40,13 +51,7 @@ export class AuthController {
   ) {
     const session = await this.auth.login(body.email, body.password, getCorrelationId(request));
     reply
-      .setCookie("crm_session", session.token, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-        maxAge: 60 * 60 * 8,
-      })
+      .setCookie("crm_session", session.token, sessionCookieOptions())
       .status(204)
       .send();
   }
@@ -59,7 +64,7 @@ export class AuthController {
       throw new UnauthorizedException("Authentication required");
     }
     await this.auth.logout(token, getCorrelationId(request));
-    reply.clearCookie("crm_session", { path: "/" }).status(204).send();
+    reply.clearCookie("crm_session", sessionCookieOptions()).status(204).send();
   }
 
   @Get("me")
