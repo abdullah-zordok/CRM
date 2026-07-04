@@ -19,6 +19,12 @@ export const LEAD_ACTIONS = [
   "ADD_NOTE",
   "VIEW_HISTORY",
   "SEARCH",
+  "ACTIVITY_CREATE",
+  "ACTIVITY_VIEW",
+  "ACTIVITY_COMPLETE",
+  "ACTIVITY_REASSIGN",
+  "ACTIVITY_CANCEL",
+  "ACTIVITY_SEARCH",
 ] as const;
 
 export const LEAD_HISTORY_ENTRY_TYPES = [
@@ -34,6 +40,13 @@ export const LEAD_HISTORY_ENTRY_TYPES = [
   "NOTE_ADDED",
   "DUPLICATE_BLOCKED",
   "STALE_UPDATE_REJECTED",
+  "ACTIVITY_CREATED",
+  "FOLLOW_UP_SCHEDULED",
+  "FOLLOW_UP_COMPLETED",
+  "FOLLOW_UP_REASSIGNED",
+  "ACTIVITY_CANCELED",
+  "ACTIVITY_CORRECTED",
+  "FOLLOW_UP_STATUS_CHANGED",
 ] as const;
 
 export const LEAD_DOMAIN_EVENTS = [
@@ -43,6 +56,13 @@ export const LEAD_DOMAIN_EVENTS = [
   "LeadSourceChanged",
   "LeadExhibitionReferenceChanged",
   "LeadNoteAdded",
+  "ActivityCreated",
+  "FollowUpScheduled",
+  "FollowUpCompleted",
+  "FollowUpReassigned",
+  "ActivityCanceled",
+  "ActivityCorrected",
+  "FollowUpStatusChanged",
 ] as const;
 
 export type LeadStatus = (typeof LEAD_STATUSES)[number];

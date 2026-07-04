@@ -1,7 +1,13 @@
 import type { UserSummary } from "../api/users-client";
 import { RoleAssignmentPanel } from "./role-assignment-panel";
 
-export function UserDetail({ user }: { user: UserSummary }) {
+export function UserDetail({
+  user,
+  onUserUpdated,
+}: {
+  user: UserSummary;
+  onUserUpdated?: (user: UserSummary) => void;
+}) {
   return (
     <article className="user-card">
       <h2>{user.displayName}</h2>
@@ -19,7 +25,7 @@ export function UserDetail({ user }: { user: UserSummary }) {
           <dd>{user.roles.join(", ")}</dd>
         </div>
       </dl>
-      <RoleAssignmentPanel user={user} />
+      <RoleAssignmentPanel user={user} onUserUpdated={onUserUpdated} />
     </article>
   );
 }

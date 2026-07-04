@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3501";
 
 type SmokeJob = {
   jobId: string;

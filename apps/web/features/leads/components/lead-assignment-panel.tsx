@@ -47,12 +47,7 @@ export function LeadAssignmentPanel({ lead }: { lead: LeadDetail }) {
   }
 
   if (!lead.permissions.canAssign) {
-    return (
-      <section aria-label="Lead assignment">
-        <h2>Assignment</h2>
-        <p>You do not have permission to assign this lead.</p>
-      </section>
-    );
+    return null;
   }
 
   return (
@@ -93,8 +88,10 @@ export function LeadAssignmentPanel({ lead }: { lead: LeadDetail }) {
       {lead.assignmentHistory.length === 0 ? <p>No assignment changes yet.</p> : null}
       <ol>
         {lead.assignmentHistory.map((assignment) => (
-          <li key={assignment.id}>
-            {assignment.fromUserId ?? "Unassigned"} to {assignment.toUserId}
+          <li key={`${assignment.assignedAt}-${assignment.newOwner?.id ?? "unassigned"}`}>
+            {assignment.previousOwner?.displayName ?? "Unassigned"} to{" "}
+            {assignment.newOwner?.displayName ?? "Unassigned"}
+            {assignment.assignedBy ? ` by ${assignment.assignedBy.displayName}` : ""}
             {assignment.reason ? ` - ${assignment.reason}` : ""}
           </li>
         ))}

@@ -59,7 +59,7 @@ Phase 2 adds protected lead management routes:
   history panels.
 
 Set `NEXT_PUBLIC_API_BASE_URL` to the API origin when it differs from
-`http://localhost:3001`.
+`http://localhost:3501`.
 
 ### Browser Validation
 

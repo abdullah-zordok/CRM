@@ -15,6 +15,7 @@ export interface PlatformUserRecord {
   displayName: string;
   passwordHash?: string;
   status: UserStatus;
+  isDeleted?: boolean;
   roles: BusinessRoleCode[];
   hasReviewerAccess: boolean;
   activeTeam?: TeamSummary;

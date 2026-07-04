@@ -2,7 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { login } from "./auth-client";
+import { currentUser, login } from "./auth-client";
+
+function getPostLoginPath(roles: string[]) {
+  const isMainWorkspaceUser = roles.includes("ADMIN") || roles.includes("MANAGER");
+  const isSalesRepresentative = roles.includes("SALES_REPRESENTATIVE") && !isMainWorkspaceUser;
+
+  return isSalesRepresentative ? "/sales/leads" : "/dashboard";
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -15,7 +22,8 @@ export function LoginForm() {
         email: String(formData.get("email")),
         password: String(formData.get("password")),
       });
-      router.push("/dashboard");
+      const user = await currentUser().catch(() => null);
+      router.push(getPostLoginPath(user?.roles ?? []));
       router.refresh();
     } catch {
       setError("Invalid email or password.");

@@ -10,6 +10,8 @@ import type {
 import { redactMetadata } from "../users/users.dto.js";
 
 type LeadWithReference = Lead & {
+  owner?: { displayName: string } | null;
+  creator?: { displayName: string } | null;
   exhibitionReference?: LeadExhibitionReference | null;
   assignments?: LeadAssignment[];
   statusHistory?: LeadStatusHistory[];
@@ -47,8 +49,10 @@ export function toLeadSummaryDto(lead: LeadWithReference, correlationId = "local
     budgetAmount: lead.budgetAmount ? Number(lead.budgetAmount) : null,
     budgetCurrency: lead.budgetCurrency,
     ownerUserId: lead.ownerUserId,
+    ownerDisplayName: lead.owner?.displayName ?? null,
     teamId: lead.teamId,
     createdByUserId: lead.createdByUserId,
+    createdByDisplayName: lead.creator?.displayName ?? null,
     exhibitionReference: lead.exhibitionReference
       ? {
           name: lead.exhibitionReference.name,
@@ -63,7 +67,26 @@ export function toLeadSummaryDto(lead: LeadWithReference, correlationId = "local
   };
 }
 
-export function toLeadDetailDto(lead: LeadWithReference, correlationId = "local") {
+export function leadPermissionsForRoles(roles: string[]) {
+  const isManagerOrAdmin = roles.includes("MANAGER") || roles.includes("ADMIN");
+  return {
+    canUpdate: true,
+    canAssign: isManagerOrAdmin,
+    canChangeStatus: true,
+    canAddNote: true,
+    canViewHistory: true,
+  };
+}
+
+export function toLeadDetailDto(
+  lead: LeadWithReference,
+  correlationId = "local",
+  options?: {
+    permissions?: ReturnType<typeof leadPermissionsForRoles>;
+    includeAssignmentHistory?: boolean;
+    userDisplayNames?: Record<string, string>;
+  }
+) {
   return {
     ...toLeadSummaryDto(lead, correlationId),
     notes: (lead.notes ?? []).map((note) => ({
@@ -74,18 +97,26 @@ export function toLeadDetailDto(lead: LeadWithReference, correlationId = "local"
       createdAt: note.createdAt.toISOString(),
       correlationId: note.correlationId,
     })),
-    assignmentHistory: (lead.assignments ?? []).map((assignment) => ({
-      id: assignment.id,
-      leadId: assignment.leadId,
-      fromUserId: assignment.fromUserId,
-      toUserId: assignment.toUserId,
-      fromTeamId: assignment.fromTeamId,
-      toTeamId: assignment.toTeamId,
-      assignedByUserId: assignment.assignedByUserId,
-      reason: assignment.reason,
-      createdAt: assignment.createdAt.toISOString(),
-      correlationId: assignment.correlationId,
-    })),
+    assignmentHistory:
+      options?.includeAssignmentHistory !== false
+        ? (lead.assignments ?? []).map((assignment) => {
+            const getDisplayName = (id: string | null) => {
+              if (!id) return null;
+              return {
+                id,
+                displayName: options?.userDisplayNames?.[id] ?? "Unknown User",
+              };
+            };
+
+            return {
+              previousOwner: getDisplayName(assignment.fromUserId),
+              newOwner: getDisplayName(assignment.toUserId),
+              assignedBy: getDisplayName(assignment.assignedByUserId),
+              reason: assignment.reason,
+              assignedAt: assignment.createdAt.toISOString(),
+            };
+          })
+        : [],
     statusHistory: (lead.statusHistory ?? []).map((status) => ({
       id: status.id,
       leadId: status.leadId,
@@ -97,7 +128,7 @@ export function toLeadDetailDto(lead: LeadWithReference, correlationId = "local"
       createdAt: status.createdAt.toISOString(),
       correlationId: status.correlationId,
     })),
-    permissions: {
+    permissions: options?.permissions ?? {
       canUpdate: true,
       canAssign: true,
       canChangeStatus: true,

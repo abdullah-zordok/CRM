@@ -6,6 +6,7 @@ export function toUserSummary(user: PlatformUserRecord, correlationId = "local")
     email: user.email,
     displayName: user.displayName,
     status: user.status,
+    isDeleted: user.isDeleted ?? false,
     roles: user.roles,
     hasReviewerAccess: user.hasReviewerAccess,
     activeTeam: user.activeTeam,

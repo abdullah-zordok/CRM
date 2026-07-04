@@ -11,6 +11,7 @@ export const createUserSchema = z.object({
     .max(320)
     .transform((email) => email.toLowerCase()),
   displayName: z.string().trim().min(1).max(120),
+  password: z.string().min(12).max(128).optional(),
   roles: z.array(businessRoleSchema).min(1),
   status: userStatusSchema.default("PENDING_ACTIVATION"),
   teamId: z.string().uuid().optional(),

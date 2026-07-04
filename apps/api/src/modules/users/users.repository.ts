@@ -61,6 +61,7 @@ export class UsersRepository {
         email: "admin@example.com",
         displayName: "Seeded Admin",
         status: "ACTIVE",
+        isDeleted: false,
         roles: ["ADMIN"],
         hasReviewerAccess: false,
         activatedAt: now,
@@ -97,7 +98,12 @@ export class UsersRepository {
 
   async saveUser(user: PlatformUserRecord): Promise<PlatformUserRecord> {
     if (!this.prisma) {
-      this.users.set(user.id, { ...user, email: user.email.toLowerCase(), updatedAt: new Date() });
+      this.users.set(user.id, {
+        ...user,
+        email: user.email.toLowerCase(),
+        isDeleted: user.isDeleted ?? false,
+        updatedAt: new Date(),
+      });
       return this.users.get(user.id)!;
     }
 
@@ -108,6 +114,7 @@ export class UsersRepository {
         displayName: user.displayName,
         passwordHash: user.passwordHash,
         status: user.status as PlatformUserStatus,
+        isDeleted: user.isDeleted ?? false,
         activatedAt: user.activatedAt,
         disabledAt: user.disabledAt,
       },
@@ -117,6 +124,7 @@ export class UsersRepository {
         displayName: user.displayName,
         passwordHash: user.passwordHash,
         status: user.status as PlatformUserStatus,
+        isDeleted: user.isDeleted ?? false,
         activatedAt: user.activatedAt,
         disabledAt: user.disabledAt,
       },
@@ -533,6 +541,7 @@ export class UsersRepository {
       displayName: user.displayName,
       passwordHash: user.passwordHash ?? undefined,
       status: user.status,
+      isDeleted: user.isDeleted,
       roles: user.roleAssignments
         .filter((assignment) => assignment.status === AssignmentStatus.ACTIVE)
         .map((assignment) => assignment.roleCode as BusinessRoleCode),

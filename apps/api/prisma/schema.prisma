@@ -15,6 +15,8 @@ model PlatformUser {
   status              PlatformUserStatus   @default(PENDING_ACTIVATION)
   activatedAt         DateTime?            @db.Timestamp(6)
   disabledAt          DateTime?            @db.Timestamp(6)
+  isDeleted           Boolean              @default(false)
+  deletedAt           DateTime?            @db.Timestamp(6)
   createdAt           DateTime             @default(now()) @db.Timestamp(6)
   updatedAt           DateTime             @updatedAt @db.Timestamp(6)
   activationTokens    ActivationToken[]
@@ -24,8 +26,13 @@ model PlatformUser {
   teamMemberships     TeamMembership[]
   createdLeads        Lead[]               @relation("LeadCreator")
   ownedLeads          Lead[]               @relation("LeadOwner")
+  ownedActivities     Activity[]           @relation("ActivityOwner")
+  recordedActivities  Activity[]           @relation("ActivityRecorder")
+  ExhibitionAttendee  ExhibitionAttendee[]
 
   @@index([status])
+  @@index([isDeleted])
+  @@index([status, isDeleted])
   @@index([displayName])
   @@index([email])
 }
@@ -92,15 +99,17 @@ model ReviewerAssignment {
 }
 
 model Team {
-  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String
-  status          TeamStatus       @default(ACTIVE)
-  createdByUserId String?          @db.Uuid
-  createdAt       DateTime         @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime         @updatedAt @db.Timestamp(6)
-  deactivatedAt   DateTime?        @db.Timestamp(6)
-  memberships     TeamMembership[]
-  leads           Lead[]
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String
+  status             TeamStatus           @default(ACTIVE)
+  createdByUserId    String?              @db.Uuid
+  createdAt          DateTime             @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime             @updatedAt @db.Timestamp(6)
+  deactivatedAt      DateTime?            @db.Timestamp(6)
+  memberships        TeamMembership[]
+  leads              Lead[]
+  Activity           Activity[]
+  ExhibitionAttendee ExhibitionAttendee[]
 
   @@index([name])
   @@index([status])
@@ -238,36 +247,38 @@ model LeadSource {
 }
 
 model Lead {
-  id                  String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  displayName         String
-  company             String?
-  email               String?
-  normalizedEmail     String?
-  phone               String?
-  normalizedPhone     String?
-  sourceCode          String
-  status              LeadStatus               @default(NEW)
-  priority            LeadPriority
-  budgetAmount        Decimal?                 @db.Decimal(14, 2)
-  budgetCurrency      String?
-  ownerUserId         String                   @db.Uuid
-  teamId              String?                  @db.Uuid
-  createdByUserId     String                   @db.Uuid
-  version             Int                      @default(1)
-  createdAt           DateTime                 @default(now()) @db.Timestamp(6)
-  updatedAt           DateTime                 @updatedAt @db.Timestamp(6)
-  archivedAt          DateTime?                @db.Timestamp(6)
-  source              LeadSource               @relation(fields: [sourceCode], references: [code], onDelete: Restrict, onUpdate: Cascade)
-  owner               PlatformUser             @relation("LeadOwner", fields: [ownerUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  creator             PlatformUser             @relation("LeadCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  team                Team?                    @relation(fields: [teamId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  exhibitionReference LeadExhibitionReference?
-  assignments         LeadAssignment[]
-  statusHistory       LeadStatusHistory[]
-  notes               LeadNote[]
-  historyEntries      LeadHistoryEntry[]
-  accessDecisions     LeadAccessDecision[]
-  domainEvents        LeadDomainEvent[]
+  id                     String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  displayName            String
+  company                String?
+  email                  String?
+  normalizedEmail        String?
+  phone                  String?
+  normalizedPhone        String?
+  sourceCode             String
+  status                 LeadStatus                  @default(NEW)
+  priority               LeadPriority
+  budgetAmount           Decimal?                    @db.Decimal(14, 2)
+  budgetCurrency         String?
+  ownerUserId            String                      @db.Uuid
+  teamId                 String?                     @db.Uuid
+  createdByUserId        String                      @db.Uuid
+  version                Int                         @default(1)
+  createdAt              DateTime                    @default(now()) @db.Timestamp(6)
+  updatedAt              DateTime                    @updatedAt @db.Timestamp(6)
+  archivedAt             DateTime?                   @db.Timestamp(6)
+  source                 LeadSource                  @relation(fields: [sourceCode], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  owner                  PlatformUser                @relation("LeadOwner", fields: [ownerUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  creator                PlatformUser                @relation("LeadCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  team                   Team?                       @relation(fields: [teamId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  exhibitionReference    LeadExhibitionReference?
+  activities             Activity[]
+  assignments            LeadAssignment[]
+  statusHistory          LeadStatusHistory[]
+  notes                  LeadNote[]
+  historyEntries         LeadHistoryEntry[]
+  accessDecisions        LeadAccessDecision[]
+  exhibitionAttributions ExhibitionLeadAttribution[]
+  domainEvents           LeadDomainEvent[]
 
   @@index([status])
   @@index([sourceCode])
@@ -411,6 +422,203 @@ model LeadDomainEvent {
   @@index([correlationId])
 }
 
+model Activity {
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId             String           @db.Uuid
+  type               ActivityType
+  status             ActivityStatus   @default(PLANNED)
+  ownerUserId        String           @db.Uuid
+  teamId             String?          @db.Uuid
+  recordedByUserId   String           @db.Uuid
+  activityAt         DateTime?        @db.Timestamp(6)
+  dueAt              DateTime?        @db.Timestamp(6)
+  completedAt        DateTime?        @db.Timestamp(6)
+  canceledAt         DateTime?        @db.Timestamp(6)
+  outcome            ActivityOutcome?
+  note               String?
+  cancellationReason String?
+  version            Int              @default(1)
+  correlationId      String
+  createdAt          DateTime         @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime         @updatedAt @db.Timestamp(6)
+  lead               Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  owner              PlatformUser     @relation("ActivityOwner", fields: [ownerUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  recorder           PlatformUser     @relation("ActivityRecorder", fields: [recordedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  team               Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([leadId, activityAt, dueAt, createdAt])
+  @@index([ownerUserId, status, dueAt])
+  @@index([teamId, status, dueAt])
+  @@index([type, status, createdAt])
+  @@index([correlationId])
+  @@index([version])
+}
+
+model ActivityAuditEntry {
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  activityId    String?              @db.Uuid
+  leadId        String?              @db.Uuid
+  actorUserId   String?              @db.Uuid
+  eventType     ActivityAuditType
+  outcome       SecurityAuditOutcome @default(SUCCESS)
+  metadata      Json                 @default("{}")
+  correlationId String
+  createdAt     DateTime             @default(now()) @db.Timestamp(6)
+
+  @@index([activityId, createdAt])
+  @@index([leadId, createdAt])
+  @@index([actorUserId])
+  @@index([eventType, outcome, createdAt])
+  @@index([correlationId])
+}
+
+model Exhibition {
+  id              String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  startsAt        DateTime                    @db.Timestamp(6)
+  endsAt          DateTime                    @db.Timestamp(6)
+  location        String
+  status          ExhibitionStatus            @default(PLANNED)
+  ownerUserId     String                      @db.Uuid
+  teamId          String?                     @db.Uuid
+  notes           String?
+  archiveReason   String?
+  version         Int                         @default(1)
+  createdByUserId String                      @db.Uuid
+  updatedByUserId String                      @db.Uuid
+  createdAt       DateTime                    @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime                    @updatedAt @db.Timestamp(6)
+  archivedAt      DateTime?                   @db.Timestamp(6)
+  correlationId   String
+  attendees       ExhibitionAttendee[]
+  attributions    ExhibitionLeadAttribution[]
+  historyEntries  ExhibitionHistoryEntry[]
+
+  @@index([status])
+  @@index([teamId])
+  @@index([ownerUserId])
+  @@index([startsAt, endsAt])
+  @@index([version])
+  @@index([correlationId])
+}
+
+model ExhibitionAttendee {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  exhibitionId      String         @db.Uuid
+  userId            String         @db.Uuid
+  teamId            String?        @db.Uuid
+  plannedRole       String?
+  status            AttendeeStatus @default(PLANNED)
+  confirmedAt       DateTime?      @db.Timestamp(6)
+  confirmedByUserId String?        @db.Uuid
+  assignedByUserId  String         @db.Uuid
+  removedByUserId   String?        @db.Uuid
+  correctionReason  String?
+  version           Int            @default(1)
+  createdAt         DateTime       @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime       @updatedAt @db.Timestamp(6)
+  correlationId     String
+  exhibition        Exhibition     @relation(fields: [exhibitionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user              PlatformUser   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  team              Team?          @relation(fields: [teamId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([exhibitionId, userId])
+  @@index([exhibitionId, status, createdAt])
+  @@index([userId, status])
+  @@index([teamId])
+  @@index([correlationId])
+}
+
+model ExhibitionLeadAttribution {
+  id                      String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  exhibitionId            String            @db.Uuid
+  leadId                  String            @db.Uuid
+  attributionType         AttributionType
+  status                  AttributionStatus @default(ACTIVE)
+  sourceReferenceName     String?
+  sourceReferenceDate     DateTime?         @db.Date
+  sourceReferenceLocation String?
+  createdByUserId         String            @db.Uuid
+  updatedByUserId         String?           @db.Uuid
+  correctionReason        String?
+  version                 Int               @default(1)
+  createdAt               DateTime          @default(now()) @db.Timestamp(6)
+  updatedAt               DateTime          @updatedAt @db.Timestamp(6)
+  correlationId           String
+  exhibition              Exhibition        @relation(fields: [exhibitionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  lead                    Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([exhibitionId, leadId, status, createdAt])
+  @@index([leadId])
+  @@index([correlationId])
+}
+
+model ExhibitionHistoryEntry {
+  id             String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  exhibitionId   String                     @db.Uuid
+  entryType      ExhibitionHistoryEntryType
+  actorUserId    String?                    @db.Uuid
+  leadId         String?                    @db.Uuid
+  attendeeUserId String?                    @db.Uuid
+  summary        String
+  metadata       Json                       @default("{}")
+  createdAt      DateTime                   @default(now()) @db.Timestamp(6)
+  correlationId  String
+  exhibition     Exhibition                 @relation(fields: [exhibitionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([exhibitionId])
+  @@index([entryType])
+  @@index([actorUserId])
+  @@index([leadId])
+  @@index([attendeeUserId])
+  @@index([createdAt])
+  @@index([correlationId])
+}
+
+model ExhibitionAccessDecision {
+  id            String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String?               @db.Uuid
+  exhibitionId  String?               @db.Uuid
+  leadId        String?               @db.Uuid
+  action        ExhibitionAction
+  decision      AccessDecisionValue
+  reason        String
+  scope         ExhibitionAccessScope
+  createdAt     DateTime              @default(now()) @db.Timestamp(6)
+  correlationId String
+
+  @@index([userId])
+  @@index([exhibitionId])
+  @@index([leadId])
+  @@index([action])
+  @@index([decision])
+  @@index([createdAt])
+  @@index([correlationId])
+}
+
+model ExhibitionDomainEvent {
+  id             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           ExhibitionDomainEventName
+  version        Int                       @default(1)
+  exhibitionId   String                    @db.Uuid
+  leadId         String?                   @db.Uuid
+  attendeeUserId String?                   @db.Uuid
+  payload        Json                      @default("{}")
+  idempotencyKey String                    @unique
+  correlationId  String
+  status         OperationalEventStatus    @default(RECORDED)
+  createdAt      DateTime                  @default(now()) @db.Timestamp(6)
+  handledAt      DateTime?                 @db.Timestamp(6)
+
+  @@index([exhibitionId])
+  @@index([leadId])
+  @@index([attendeeUserId])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt])
+  @@index([correlationId])
+}
+
 enum PlatformUserStatus {
   PENDING_ACTIVATION
   ACTIVE
@@ -467,6 +675,7 @@ enum AuthSessionRevocationReason {
   ROLE_REMOVED
   REVIEWER_ACCESS_REMOVED
   SECURITY_REVOKE
+  USER_DELETED
 }
 
 enum AccessDecisionValue {
@@ -537,6 +746,13 @@ enum LeadHistoryEntryType {
   NOTE_ADDED
   DUPLICATE_BLOCKED
   STALE_UPDATE_REJECTED
+  ACTIVITY_CREATED
+  FOLLOW_UP_SCHEDULED
+  FOLLOW_UP_COMPLETED
+  FOLLOW_UP_REASSIGNED
+  ACTIVITY_CANCELED
+  ACTIVITY_CORRECTED
+  FOLLOW_UP_STATUS_CHANGED
 }
 
 enum LeadAction {
@@ -548,6 +764,12 @@ enum LeadAction {
   ADD_NOTE
   VIEW_HISTORY
   SEARCH
+  ACTIVITY_CREATE
+  ACTIVITY_VIEW
+  ACTIVITY_COMPLETE
+  ACTIVITY_REASSIGN
+  ACTIVITY_CANCEL
+  ACTIVITY_SEARCH
 }
 
 enum LeadAccessScope {
@@ -565,4 +787,122 @@ enum LeadDomainEventName {
   LeadSourceChanged
   LeadExhibitionReferenceChanged
   LeadNoteAdded
+  ActivityCreated
+  FollowUpScheduled
+  FollowUpCompleted
+  FollowUpReassigned
+  ActivityCanceled
+  ActivityCorrected
+  FollowUpStatusChanged
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  EXHIBITION_VISIT
+  WHATSAPP
+  OTHER
+}
+
+enum ActivityStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum ActivityOutcome {
+  CONNECTED
+  NO_ANSWER
+  QUALIFIED_INTEREST
+  FOLLOW_UP_REQUIRED
+  NOT_INTERESTED
+  OTHER
+}
+
+enum ActivityAuditType {
+  ACTIVITY_CREATED
+  FOLLOW_UP_SCHEDULED
+  FOLLOW_UP_COMPLETED
+  FOLLOW_UP_REASSIGNED
+  ACTIVITY_CANCELED
+  ACTIVITY_CORRECTED
+  ACTIVITY_ACCESS_DENIED
+}
+
+enum ExhibitionStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  CANCELED
+  ARCHIVED
+}
+
+enum AttendeeStatus {
+  PLANNED
+  CONFIRMED
+  ABSENT
+  REMOVED
+  CORRECTED
+}
+
+enum AttributionType {
+  SOURCE
+  INFLUENCE
+  CORRECTION
+}
+
+enum AttributionStatus {
+  ACTIVE
+  REMOVED
+  CORRECTED
+}
+
+enum ExhibitionHistoryEntryType {
+  CREATED
+  UPDATED
+  STATUS_CHANGED
+  ARCHIVED
+  RESTORED
+  ATTENDEE_ASSIGNED
+  ATTENDANCE_CONFIRMED
+  ATTENDANCE_CORRECTED
+  LEAD_ATTRIBUTED
+  ATTRIBUTION_CORRECTED
+  ATTRIBUTION_REMOVED
+  STALE_UPDATE_REJECTED
+  ACCESS_DENIED
+}
+
+enum ExhibitionAction {
+  CREATE
+  VIEW
+  UPDATE
+  ARCHIVE
+  RESTORE
+  ASSIGN_ATTENDEE
+  CONFIRM_ATTENDANCE
+  ATTRIBUTE_LEAD
+  VIEW_SUMMARY
+  SEARCH
+}
+
+enum ExhibitionAccessScope {
+  GLOBAL
+  TEAM
+  ATTENDEE
+  OWNED_LEAD
+  EXPLICIT
+  NONE
+}
+
+enum ExhibitionDomainEventName {
+  ExhibitionCreated
+  ExhibitionUpdated
+  ExhibitionStatusChanged
+  ExhibitionAttendeeAssigned
+  ExhibitionAttendanceConfirmed
+  ExhibitionLeadAttributed
+  ExhibitionAttributionCorrected
 }

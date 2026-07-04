@@ -7,7 +7,7 @@ import { AccessibilityFrame } from "../../features/workspace/components/accessib
 import { WorkspaceNavigation } from "../../features/workspace/components/workspace-navigation";
 
 const API_BASE_URL =
-  process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+  process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3501";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();

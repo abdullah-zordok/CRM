@@ -11,6 +11,7 @@ import { UsersRepository } from "./users.repository.js";
 import type { CreateUserInput, UpdateUserInput } from "./users.schemas.js";
 import type { PlatformUserRecord } from "./users.types.js";
 import { UsersSecurityAuditService } from "./audit/users-security-audit.service.js";
+import { PasswordService } from "../auth/security/password.service.js";
 
 @Injectable()
 export class UsersService {
@@ -19,6 +20,7 @@ export class UsersService {
     private readonly activation: ActivationService,
     private readonly audit: UsersSecurityAuditService,
     private readonly events: AdminEventService,
+    private readonly passwords?: PasswordService,
   ) {}
 
   async list(
@@ -60,24 +62,28 @@ export class UsersService {
     if (await this.repository.findUserByEmail(input.email))
       throw new ConflictException("Email already exists");
     const now = new Date();
+    const passwordHash = input.password ? await this.passwords?.hash(input.password) : undefined;
     const user: PlatformUserRecord = {
       id: this.repository.nextId(),
       email: input.email,
       displayName: input.displayName,
-      status: input.status,
+      passwordHash,
+      status: passwordHash ? "ACTIVE" : input.status,
+      isDeleted: false,
       roles: [...new Set(input.roles)],
       hasReviewerAccess: input.reviewerAccess,
+      activatedAt: passwordHash ? now : undefined,
       createdAt: now,
       updatedAt: now,
     };
     await this.repository.saveUser(user);
-    const activation = await this.activation.issue(user.id, actorUserId);
+    const activation = passwordHash ? undefined : await this.activation.issue(user.id, actorUserId);
     await this.audit.record({
       eventType: "USER_CREATED",
       actorUserId,
       targetUserId: user.id,
       resource: "users",
-      metadata: { roles: user.roles, activationToken: activation.rawToken },
+      metadata: { roles: user.roles, activationToken: activation?.rawToken },
     });
     this.events.record({
       name: "UserCreated",
@@ -85,9 +91,19 @@ export class UsersService {
       idempotencyKey: `user-created:${user.id}`,
       correlationId: "local",
     });
+    if (passwordHash) {
+      this.events.record({
+        name: "UserActivated",
+        payload: { userId: user.id },
+        idempotencyKey: `user-activated:${user.id}`,
+        correlationId: "local",
+      });
+    }
     return {
       ...toUserDetail(await this.requireUser(user.id)),
-      activation: { status: activation.status, expiresAt: activation.expiresAt.toISOString() },
+      activation: activation
+        ? { status: activation.status, expiresAt: activation.expiresAt.toISOString() }
+        : undefined,
     };
   }
 
@@ -132,6 +148,26 @@ export class UsersService {
         metadata: { reason },
       });
     }
+  }
+
+  async delete(userId: string, actorUserId = "system") {
+    if (userId === actorUserId) throw new BadRequestException("Admin cannot delete their own account");
+    const user = await this.requireUser(userId);
+    const saved = await this.repository.saveUser({
+      ...user,
+      status: "DISABLED",
+      isDeleted: true,
+      disabledAt: new Date(),
+    });
+    await this.revokeUserSessions(userId, "USER_DELETED");
+    await this.audit.record({
+      eventType: "USER_DELETED",
+      actorUserId,
+      targetUserId: userId,
+      resource: "users",
+      metadata: {},
+    });
+    return toUserDetail(saved);
   }
 
   async activeAdminCount(excludingUserId?: string) {

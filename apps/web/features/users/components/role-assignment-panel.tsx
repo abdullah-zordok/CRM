@@ -4,7 +4,13 @@ import { useState } from "react";
 import type { UserSummary } from "../api/users-client";
 import { replaceRoles, setReviewerAccess } from "../api/permissions-client";
 
-export function RoleAssignmentPanel({ user }: { user: UserSummary }) {
+export function RoleAssignmentPanel({
+  user,
+  onUserUpdated,
+}: {
+  user: UserSummary;
+  onUserUpdated?: (user: UserSummary) => void;
+}) {
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<string>();
 
@@ -13,7 +19,8 @@ export function RoleAssignmentPanel({ user }: { user: UserSummary }) {
     setMessage(undefined);
 
     try {
-      await replaceRoles(user.id, [role]);
+      const updated = await replaceRoles(user.id, [role]);
+      onUserUpdated?.(updated);
       setMessage("Access updated.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update access.");
@@ -25,7 +32,8 @@ export function RoleAssignmentPanel({ user }: { user: UserSummary }) {
     setMessage(undefined);
 
     try {
-      await setReviewerAccess(user.id, !user.hasReviewerAccess);
+      const updated = await setReviewerAccess(user.id, !user.hasReviewerAccess);
+      onUserUpdated?.(updated);
       setMessage("Reviewer access updated.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update reviewer access.");

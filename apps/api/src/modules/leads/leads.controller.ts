@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Post, Put, Query, Req, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
 import { RequirePermission } from "../../common/decorators/roles.decorator.js";
 import { RoleGuard } from "../../common/guards/role.guard.js";
 import { SessionGuard, type AuthenticatedRequest } from "../../common/guards/session.guard.js";
@@ -11,12 +22,14 @@ import {
   leadHistoryQuerySchema,
   createLeadSchema,
   leadSearchSchema,
+  updateLeadSchema,
   type AddLeadNoteInput,
   type AssignLeadInput,
   type ChangeLeadStatusInput,
   type CreateLeadInput,
   type LeadHistoryQueryInput,
   type LeadSearchInput,
+  type UpdateLeadInput,
 } from "./leads.schemas.js";
 import { LeadService } from "./leads.service.js";
 import { LeadAssignmentService } from "./assignment/lead-assignment.service.js";
@@ -87,6 +100,16 @@ export class LeadsController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.notes.addNote(leadId, body, request.user);
+  }
+
+  @Patch(":leadId")
+  @RequirePermission(PermissionCode.LeadsUpdate)
+  update(
+    @Param("leadId") leadId: string,
+    @Body(new ZodValidationPipe(updateLeadSchema)) body: UpdateLeadInput,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.leads.update(leadId, body, request.user);
   }
 
   @Get(":leadId/history")
