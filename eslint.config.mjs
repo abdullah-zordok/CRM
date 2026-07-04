@@ -14,6 +14,7 @@ export default [
       "**/coverage/",
       ".next/",
       "**/.next/",
+      "**/next-env.d.ts",
       "playwright-report/",
       "**/playwright-report/",
       "test-results/",

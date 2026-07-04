@@ -17,5 +17,6 @@ Thumbs.db
 .idea/
 .codex-run/
 .opencode/
+.vercel/
 *.tsbuildinfo
 
