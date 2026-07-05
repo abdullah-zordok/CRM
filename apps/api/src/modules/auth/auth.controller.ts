@@ -50,10 +50,7 @@ export class AuthController {
     @Res() reply: FastifyReply,
   ) {
     const session = await this.auth.login(body.email, body.password, getCorrelationId(request));
-    reply
-      .setCookie("crm_session", session.token, sessionCookieOptions())
-      .status(204)
-      .send();
+    reply.setCookie("crm_session", session.token, sessionCookieOptions()).status(204).send();
   }
 
   @Post("logout")
