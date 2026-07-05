@@ -3,9 +3,8 @@ import { spawnSync } from "node:child_process";
 const commands = [
   ["format:check"],
   ["lint"],
-  ["--filter", "@crm/api", "exec", "prisma", "generate"],
-  ["--filter", "@crm/api", "exec", "tsc", "-p", "tsconfig.json"],
-  ["--filter", "@crm/web", "exec", "next", "build"],
+  ["--filter", "@crm/api", "build"],
+  ["--filter", "@crm/web", "build"],
   ["db:migrate"],
   ["db:seed"],
   ["test:unit"],
