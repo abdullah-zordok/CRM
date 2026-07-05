@@ -4,7 +4,7 @@
   "installCommand": "pnpm install",
   "ignoreCommand": "exit 1",
   "buildCommand": "pnpm vercel-build",
-  "outputDirectory": "apps/web/.next",
+  "outputDirectory": "../web/.next",
   "functions": {
     "api/**/*.js": {
       "maxDuration": 30
