@@ -31,7 +31,9 @@ export class RolesController {
     @Body(new ZodValidationPipe(replaceRolesSchema)) body: ReplaceRolesInput,
     @Req() request: AuthenticatedRequest,
   ) {
-    return toUserDetail(await this.roleAssignments.replaceRoles(userId, body.roles, request.user?.id));
+    return toUserDetail(
+      await this.roleAssignments.replaceRoles(userId, body.roles, request.user?.id),
+    );
   }
 
   @Put("reviewer-access")

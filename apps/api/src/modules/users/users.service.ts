@@ -151,7 +151,8 @@ export class UsersService {
   }
 
   async delete(userId: string, actorUserId = "system") {
-    if (userId === actorUserId) throw new BadRequestException("Admin cannot delete their own account");
+    if (userId === actorUserId)
+      throw new BadRequestException("Admin cannot delete their own account");
     const user = await this.requireUser(userId);
     const saved = await this.repository.saveUser({
       ...user,

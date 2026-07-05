@@ -85,7 +85,7 @@ export function toLeadDetailDto(
     permissions?: ReturnType<typeof leadPermissionsForRoles>;
     includeAssignmentHistory?: boolean;
     userDisplayNames?: Record<string, string>;
-  }
+  },
 ) {
   return {
     ...toLeadSummaryDto(lead, correlationId),

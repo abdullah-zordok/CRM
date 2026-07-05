@@ -29,9 +29,24 @@ const stats = [
 ] as const;
 
 const features = [
-  ["إدارة العملاء المحتملين", "استقبل الليدز من جميع المصادر ونظمها في مكان واحد.", Users, "violet"],
-  ["توزيع الليدز على المناديب", "وزّع العملاء المحتملين على فريق المبيعات بسهولة ووضوح.", UserCheck, "green"],
-  ["متابعة المكالمات والزيارات", "سجّل كل مكالمة أو زيارة وتابع حالة كل عميل.", PhoneCall, "orange"],
+  [
+    "إدارة العملاء المحتملين",
+    "استقبل الليدز من جميع المصادر ونظمها في مكان واحد.",
+    Users,
+    "violet",
+  ],
+  [
+    "توزيع الليدز على المناديب",
+    "وزّع العملاء المحتملين على فريق المبيعات بسهولة ووضوح.",
+    UserCheck,
+    "green",
+  ],
+  [
+    "متابعة المكالمات والزيارات",
+    "سجّل كل مكالمة أو زيارة وتابع حالة كل عميل.",
+    PhoneCall,
+    "orange",
+  ],
   ["تقارير وتحليلات", "اعرف أداء المبيعات والمناديب من خلال تقارير واضحة.", BarChart3, "blue"],
   ["إدارة العملاء", "احتفظ ببيانات العملاء وتاريخ التعامل معهم في مكان واحد.", Users, "pink"],
   ["تنبيهات المتابعة", "لا تفوّت أي متابعة مهمة مع العملاء.", Bell, "purple"],
@@ -91,15 +106,21 @@ export default function HomePage() {
             </p>
             <h1>نظّم مبيعاتك، تابع عملاءك، وراقب أداء فريقك من مكان واحد</h1>
             <p className="landing-hero__lead">
-              منصة CRM تساعدك على إدارة العملاء المحتملين، توزيع المهام على المناديب،
-              متابعة حالات البيع، وتحليل أداء الفريق بسهولة ووضوح.
+              منصة CRM تساعدك على إدارة العملاء المحتملين، توزيع المهام على المناديب، متابعة حالات
+              البيع، وتحليل أداء الفريق بسهولة ووضوح.
             </p>
             <div className="landing-hero__actions">
-              <Link className="landing-button landing-button--primary landing-button--large" href="/register">
+              <Link
+                className="landing-button landing-button--primary landing-button--large"
+                href="/register"
+              >
                 ابدأ الآن مجانًا
                 <Send size={18} aria-hidden="true" />
               </Link>
-              <a className="landing-button landing-button--secondary landing-button--large" href="#how-it-works">
+              <a
+                className="landing-button landing-button--secondary landing-button--large"
+                href="#how-it-works"
+              >
                 شاهد كيف يعمل
                 <PlayCircle size={18} aria-hidden="true" />
               </a>

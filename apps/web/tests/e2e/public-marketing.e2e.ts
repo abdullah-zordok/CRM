@@ -7,14 +7,8 @@ test("public website exposes product value and navigation", async ({ page }) => 
       name: "نظّم مبيعاتك، تابع عملاءك، وراقب أداء فريقك من مكان واحد",
     }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "تسجيل الدخول" })).toHaveAttribute(
-    "href",
-    "/login",
-  );
-  await expect(page.getByRole("link", { name: "ابدأ الآن" })).toHaveAttribute(
-    "href",
-    "/register",
-  );
+  await expect(page.getByRole("link", { name: "تسجيل الدخول" })).toHaveAttribute("href", "/login");
+  await expect(page.getByRole("link", { name: "ابدأ الآن" })).toHaveAttribute("href", "/register");
 
   await page.getByRole("link", { name: "المميزات" }).click();
   await expect(page).toHaveURL(/#features$/);
