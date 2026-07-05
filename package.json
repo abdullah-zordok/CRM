@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter @crm/api --filter @crm/web dev",
     "build": "pnpm --recursive build",
-    "vercel-build": "pnpm --filter @crm/api build && pnpm --filter @crm/api db:migrate && pnpm --filter @crm/api db:seed && pnpm --filter @crm/web build",
+    "vercel-build": "pnpm --filter @crm/api build && pnpm --filter @crm/web build",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "test": "pnpm test:unit",
